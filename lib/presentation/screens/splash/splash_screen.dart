@@ -74,10 +74,7 @@ class _SplashScreenState extends State<SplashScreen>
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              AppColors.primaryLight,
-              AppColors.background,
-            ],
+            colors: [AppColors.primaryLight, AppColors.background],
           ),
         ),
         child: Center(
@@ -94,7 +91,9 @@ class _SplashScreenState extends State<SplashScreen>
                     height: 150,
                     decoration: BoxDecoration(
                       color: AppColors.surface,
-                      borderRadius: BorderRadius.circular(AppDimensions.radiusXXL),
+                      borderRadius: BorderRadius.circular(
+                        AppDimensions.radiusXXL,
+                      ),
                       boxShadow: [
                         BoxShadow(
                           color: AppColors.shadow,
@@ -104,9 +103,11 @@ class _SplashScreenState extends State<SplashScreen>
                       ],
                     ),
                     child: ClipRRect(
-                      borderRadius: BorderRadius.circular(AppDimensions.radiusXXL),
+                      borderRadius: BorderRadius.circular(
+                        AppDimensions.radiusXXL,
+                      ),
                       child: Image.asset(
-                        'assets/images/logo_noname.png',
+                        'assets/images/logo_noname-removebg.png',
                         fit: BoxFit.contain,
                       ),
                     ),
@@ -122,9 +123,9 @@ class _SplashScreenState extends State<SplashScreen>
                 child: Text(
                   AppStrings.appName,
                   style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
 
@@ -136,8 +137,8 @@ class _SplashScreenState extends State<SplashScreen>
                 child: Text(
                   AppStrings.appTagline,
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
+                    color: AppColors.textSecondary,
+                  ),
                   textAlign: TextAlign.center,
                 ),
               ),
@@ -151,7 +152,9 @@ class _SplashScreenState extends State<SplashScreen>
                   width: 40,
                   height: 40,
                   child: CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      AppColors.primary,
+                    ),
                     strokeWidth: 3,
                   ),
                 ),
