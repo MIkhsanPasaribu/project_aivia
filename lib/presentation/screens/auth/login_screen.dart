@@ -1,22 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:project_aivia/core/constants/app_colors.dart';
 import 'package:project_aivia/core/constants/app_strings.dart';
 import 'package:project_aivia/core/constants/app_dimensions.dart';
 import 'package:project_aivia/core/utils/validators.dart';
+import 'package:project_aivia/presentation/providers/auth_provider.dart';
+import 'package:project_aivia/data/models/user_profile.dart';
 
 /// Login Screen - Halaman masuk akun
-class LoginScreen extends StatefulWidget {
+class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  ConsumerState<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  
+
   bool _isLoading = false;
   bool _obscurePassword = true;
 
@@ -35,36 +38,51 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // TODO: Implement Supabase login
-      // Sementara simulasi delay
-      await Future.delayed(const Duration(seconds: 2));
+      // Call AuthRepository via Provider
+      final result = await ref
+          .read(authRepositoryProvider)
+          .signIn(
+            email: _emailController.text.trim(),
+            password: _passwordController.text,
+          );
 
       if (!mounted) return;
 
-      // TODO: Navigate based on user role
-      // Sementara ke patient home
-      Navigator.of(context).pushReplacementNamed('/patient/home');
+      result.fold(
+        onSuccess: (userProfile) {
+          // Navigate based on user role
+          final route = userProfile.userRole == UserRole.patient
+              ? '/patient/home'
+              : '/family/home';
 
-      // Show success message
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(AppStrings.successLogin),
-          backgroundColor: AppColors.success,
-        ),
+          Navigator.of(context).pushReplacementNamed(route);
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Selamat datang, ${userProfile.fullName}!'),
+              backgroundColor: AppColors.success,
+            ),
+          );
+        },
+        onFailure: (failure) {
+          setState(() => _isLoading = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(failure.message),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        },
       );
     } catch (e) {
       if (!mounted) return;
-
+      setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(e.toString()),
+          content: Text('Error: ${e.toString()}'),
           backgroundColor: AppColors.error,
         ),
       );
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
     }
   }
 
@@ -93,7 +111,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     height: 120,
                     decoration: BoxDecoration(
                       color: AppColors.surface,
-                      borderRadius: BorderRadius.circular(AppDimensions.radiusXL),
+                      borderRadius: BorderRadius.circular(
+                        AppDimensions.radiusXL,
+                      ),
                       boxShadow: [
                         BoxShadow(
                           color: AppColors.shadow,
@@ -103,7 +123,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       ],
                     ),
                     child: ClipRRect(
-                      borderRadius: BorderRadius.circular(AppDimensions.radiusXL),
+                      borderRadius: BorderRadius.circular(
+                        AppDimensions.radiusXL,
+                      ),
                       child: Image.asset(
                         'assets/images/logo_noname.png',
                         fit: BoxFit.contain,
@@ -118,9 +140,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 Text(
                   AppStrings.loginTitle,
                   style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.bold,
+                  ),
                   textAlign: TextAlign.center,
                 ),
 
@@ -175,7 +197,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 ElevatedButton(
                   onPressed: _isLoading ? null : _handleLogin,
                   style: ElevatedButton.styleFrom(
-                    minimumSize: const Size.fromHeight(AppDimensions.buttonHeightL),
+                    minimumSize: const Size.fromHeight(
+                      AppDimensions.buttonHeightL,
+                    ),
                   ),
                   child: _isLoading
                       ? const SizedBox(
