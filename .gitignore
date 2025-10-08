@@ -1,3 +1,10 @@
+# Environment Variables - JANGAN COMMIT!
+.env
+.env.local
+.env.development
+.env.production
+.env.*.local
+
 # Miscellaneous
 *.class
 *.log
@@ -43,3 +50,22 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Firebase (untuk push notifications)
+firebase_options.dart
+**/android/app/google-services.json
+**/ios/Runner/GoogleService-Info.plist
+
+# Generated files
+*.g.dart
+*.freezed.dart
+*.gr.dart
+
+# Supabase CLI (jika menggunakan Supabase CLI local)
+supabase/.branches
+supabase/.temp
+
+# Keystore files (PENTING: jangan commit!)
+*.jks
+*.keystore
+**/android/key.properties

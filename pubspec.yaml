@@ -1,6 +1,6 @@
 name: project_aivia
 description: "Aplikasi Asisten Alzheimer - AIVIA"
-publish_to: 'none'
+publish_to: "none"
 version: 0.1.0
 
 environment:
@@ -17,6 +17,9 @@ dependencies:
   # Backend & Database
   supabase_flutter: ^2.5.0
 
+  # Environment Variables
+  flutter_dotenv: ^5.1.0
+
   # Notifikasi Lokal
   awesome_notifications: ^0.9.3
 
@@ -29,7 +32,7 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
-  
+
   # Code Generation
   build_runner: ^2.4.9
   riverpod_generator: ^2.4.0
@@ -41,6 +44,7 @@ flutter:
   assets:
     - assets/images/
     - assets/fonts/
+    - .env
 
   # Fonts
   fonts:

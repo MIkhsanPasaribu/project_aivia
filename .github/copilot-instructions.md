@@ -244,6 +244,8 @@ project_aivia/
 │   │
 │   └── copilot-instructions.md            # File ini
 │
+├── docs/                                  # Dokumentasi proyek
+│
 ├── pubspec.yaml
 ├── analysis_options.yaml
 └── README.md
@@ -1133,6 +1135,7 @@ class AppColors {
 ```
 
 **Catatan Penting**:
+
 - Semua warna telah dioptimalkan untuk aksesibilitas (WCAG AA compliance)
 - Contrast ratio minimum 4.5:1 untuk teks normal
 - Contrast ratio minimum 7:1 untuk teks besar
