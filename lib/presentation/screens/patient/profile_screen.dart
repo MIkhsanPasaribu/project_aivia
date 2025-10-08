@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:project_aivia/core/constants/app_colors.dart';
 import 'package:project_aivia/core/constants/app_strings.dart';
 import 'package:project_aivia/core/constants/app_dimensions.dart';
+import 'package:project_aivia/core/utils/logout_helper.dart';
 import 'package:project_aivia/presentation/providers/auth_provider.dart';
 
 /// Profile Screen - Halaman profil pengguna
@@ -193,7 +194,10 @@ class ProfileScreen extends ConsumerWidget {
                     horizontal: AppDimensions.paddingL,
                   ),
                   child: ElevatedButton(
-                    onPressed: () => _handleLogout(context, ref),
+                    onPressed: () => LogoutHelper.showLogoutConfirmation(
+                      context: context,
+                      ref: ref,
+                    ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.error,
                       foregroundColor: Colors.white,
@@ -318,71 +322,6 @@ class ProfileScreen extends ConsumerWidget {
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text(AppStrings.ok),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _handleLogout(BuildContext context, WidgetRef ref) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text(AppStrings.logout),
-        content: const Text(AppStrings.logoutConfirm),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text(AppStrings.no),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              // Close dialog
-              Navigator.pop(context);
-
-              // Show loading
-              showDialog(
-                context: context,
-                barrierDismissible: false,
-                builder: (context) =>
-                    const Center(child: CircularProgressIndicator()),
-              );
-
-              // Call logout from repository
-              final result = await ref.read(authRepositoryProvider).signOut();
-
-              if (!context.mounted) return;
-
-              // Close loading
-              Navigator.pop(context);
-
-              result.fold(
-                onSuccess: (_) {
-                  Navigator.of(
-                    context,
-                  ).pushNamedAndRemoveUntil('/login', (route) => false);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(AppStrings.successLogout),
-                      backgroundColor: AppColors.success,
-                    ),
-                  );
-                },
-                onFailure: (failure) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(failure.message),
-                      backgroundColor: AppColors.error,
-                    ),
-                  );
-                },
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.error,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text(AppStrings.yes),
           ),
         ],
       ),

@@ -41,9 +41,35 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       return;
     }
 
+    // Dismiss keyboard
+    FocusScope.of(context).unfocus();
+
     setState(() => _isLoading = true);
 
     try {
+      // Show loading dialog to prevent user interaction
+      if (mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => const Center(
+            child: Card(
+              child: Padding(
+                padding: EdgeInsets.all(20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    CircularProgressIndicator(),
+                    SizedBox(height: 16),
+                    Text('Membuat akun...'),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      }
+
       // Call AuthRepository via Provider
       final result = await ref
           .read(authRepositoryProvider)
@@ -56,71 +82,95 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
       if (!mounted) return;
 
+      // Close loading dialog
+      Navigator.of(context).pop();
+
       result.fold(
         onSuccess: (userProfile) {
-          // Auto login setelah register sukses
-          _autoLoginAfterRegister();
+          setState(() => _isLoading = false);
+
+          // Show success message
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Akun berhasil dibuat!'),
+              backgroundColor: AppColors.success,
+              duration: Duration(seconds: 2),
+            ),
+          );
+
+          // Navigate based on role immediately (no auto-login needed)
+          final route = userProfile.userRole == UserRole.patient
+              ? '/patient/home'
+              : '/family/home';
+
+          Navigator.of(context).pushReplacementNamed(route);
         },
         onFailure: (failure) {
           setState(() => _isLoading = false);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(failure.message),
-              backgroundColor: AppColors.error,
-            ),
-          );
+
+          // Show error with retry option for rate limit
+          if (failure.code == 'rate_limit') {
+            _showRateLimitDialog();
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(failure.message),
+                backgroundColor: AppColors.error,
+                duration: const Duration(seconds: 4),
+                action: SnackBarAction(
+                  label: 'OK',
+                  textColor: Colors.white,
+                  onPressed: () {},
+                ),
+              ),
+            );
+          }
         },
       );
     } catch (e) {
       if (!mounted) return;
+
+      // Close loading dialog if still open
+      if (Navigator.canPop(context)) {
+        Navigator.of(context).pop();
+      }
+
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error: ${e.toString()}'),
+          content: Text('Terjadi kesalahan: ${e.toString()}'),
           backgroundColor: AppColors.error,
+          duration: const Duration(seconds: 4),
         ),
       );
     }
   }
 
-  Future<void> _autoLoginAfterRegister() async {
-    // Login otomatis setelah register
-    final result = await ref
-        .read(authRepositoryProvider)
-        .signIn(
-          email: _emailController.text.trim(),
-          password: _passwordController.text,
-        );
-
-    if (!mounted) return;
-
-    result.fold(
-      onSuccess: (userProfile) {
-        // Navigate based on user role
-        final route = userProfile.userRole == UserRole.patient
-            ? '/patient/home'
-            : '/family/home';
-
-        Navigator.of(context).pushReplacementNamed(route);
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Selamat datang, ${userProfile.fullName}!'),
-            backgroundColor: AppColors.success,
+  void _showRateLimitDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Terlalu Banyak Permintaan'),
+        content: const Text(
+          'Sistem sedang sibuk. Silakan tunggu beberapa menit (sekitar 5-10 menit) sebelum mencoba lagi.\n\n'
+          'Atau gunakan akun test yang sudah tersedia:\n'
+          'Email: budi@patient.com\n'
+          'Password: password123',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.pop(context); // Back to login
+            },
+            child: const Text('Kembali ke Login'),
           ),
-        );
-      },
-      onFailure: (failure) {
-        setState(() => _isLoading = false);
-        // Jika auto-login gagal, arahkan ke login screen
-        Navigator.of(context).pushReplacementNamed('/login');
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Registrasi berhasil! Silakan login.'),
-            backgroundColor: AppColors.success,
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
           ),
-        );
-      },
+        ],
+      ),
     );
   }
 

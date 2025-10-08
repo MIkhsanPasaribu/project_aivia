@@ -8,6 +8,7 @@ import 'package:project_aivia/data/models/activity.dart';
 import 'package:project_aivia/presentation/providers/activity_provider.dart';
 import 'package:project_aivia/presentation/providers/auth_provider.dart';
 import 'package:project_aivia/presentation/screens/patient/activity/activity_form_dialog.dart';
+import 'package:project_aivia/presentation/widgets/common/shimmer_loading.dart';
 
 /// Activity List Screen - Tampilan daftar aktivitas untuk Pasien dengan CRUD lengkap
 class ActivityListScreen extends ConsumerWidget {
@@ -32,8 +33,18 @@ class ActivityListScreen extends ConsumerWidget {
         return activitiesAsync.when(
           data: (activities) =>
               _buildActivityList(context, ref, user.id, activities),
-          loading: () =>
-              const Scaffold(body: Center(child: CircularProgressIndicator())),
+          loading: () => Scaffold(
+            backgroundColor: AppColors.background,
+            appBar: AppBar(
+              title: const Text(AppStrings.activityTitle),
+              automaticallyImplyLeading: false,
+            ),
+            body: ListView.builder(
+              padding: const EdgeInsets.all(AppDimensions.paddingM),
+              itemCount: 5,
+              itemBuilder: (context, index) => const ActivityCardSkeleton(),
+            ),
+          ),
           error: (error, stack) => Scaffold(
             body: Center(
               child: Column(
@@ -118,17 +129,27 @@ class ActivityListScreen extends ConsumerWidget {
           children: [
             if (todayActivities.isNotEmpty) ...[
               _buildSectionHeader(context, AppStrings.todayActivities),
-              ...todayActivities.map(
-                (activity) =>
-                    _buildActivityCard(context, ref, patientId, activity),
+              ...todayActivities.asMap().entries.map(
+                (entry) => _buildAnimatedActivityCard(
+                  context,
+                  ref,
+                  patientId,
+                  entry.value,
+                  entry.key,
+                ),
               ),
               const SizedBox(height: AppDimensions.paddingL),
             ],
             if (upcomingActivities.isNotEmpty) ...[
               _buildSectionHeader(context, AppStrings.upcomingActivities),
-              ...upcomingActivities.map(
-                (activity) =>
-                    _buildActivityCard(context, ref, patientId, activity),
+              ...upcomingActivities.asMap().entries.map(
+                (entry) => _buildAnimatedActivityCard(
+                  context,
+                  ref,
+                  patientId,
+                  entry.value,
+                  entry.key + todayActivities.length,
+                ),
               ),
             ],
           ],
@@ -198,6 +219,31 @@ class ActivityListScreen extends ConsumerWidget {
           color: AppColors.primary,
         ),
       ),
+    );
+  }
+
+  // Widget dengan animasi slide-in untuk activity card
+  Widget _buildAnimatedActivityCard(
+    BuildContext context,
+    WidgetRef ref,
+    String patientId,
+    Activity activity,
+    int index,
+  ) {
+    return TweenAnimationBuilder<double>(
+      duration: Duration(milliseconds: 300 + (index * 100)),
+      tween: Tween(begin: 0.0, end: 1.0),
+      curve: Curves.easeOutCubic,
+      builder: (context, value, child) {
+        return Opacity(
+          opacity: value,
+          child: Transform.translate(
+            offset: Offset(0, 20 * (1 - value)),
+            child: child,
+          ),
+        );
+      },
+      child: _buildActivityCard(context, ref, patientId, activity),
     );
   }
 
