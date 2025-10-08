@@ -1,25 +1,27 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:project_aivia/core/constants/app_colors.dart';
 import 'package:project_aivia/core/constants/app_strings.dart';
 import 'package:project_aivia/core/constants/app_dimensions.dart';
 import 'package:project_aivia/core/utils/validators.dart';
 import 'package:project_aivia/data/models/user_profile.dart';
+import 'package:project_aivia/presentation/providers/auth_provider.dart';
 
 /// Register Screen - Halaman pendaftaran akun
-class RegisterScreen extends StatefulWidget {
+class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
 
   @override
-  State<RegisterScreen> createState() => _RegisterScreenState();
+  ConsumerState<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _RegisterScreenState extends State<RegisterScreen> {
+class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   final _fullNameController = TextEditingController();
-  
+
   bool _isLoading = false;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
@@ -42,36 +44,84 @@ class _RegisterScreenState extends State<RegisterScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // TODO: Implement Supabase register
-      // Sementara simulasi delay
-      await Future.delayed(const Duration(seconds: 2));
+      // Call AuthRepository via Provider
+      final result = await ref
+          .read(authRepositoryProvider)
+          .signUp(
+            email: _emailController.text.trim(),
+            password: _passwordController.text,
+            fullName: _fullNameController.text.trim(),
+            role: _selectedRole,
+          );
 
       if (!mounted) return;
 
-      // Show success message
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(AppStrings.successRegister),
-          backgroundColor: AppColors.success,
-        ),
+      result.fold(
+        onSuccess: (userProfile) {
+          // Auto login setelah register sukses
+          _autoLoginAfterRegister();
+        },
+        onFailure: (failure) {
+          setState(() => _isLoading = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(failure.message),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        },
       );
-
-      // Navigate to login
-      Navigator.of(context).pop();
     } catch (e) {
       if (!mounted) return;
-
+      setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(e.toString()),
+          content: Text('Error: ${e.toString()}'),
           backgroundColor: AppColors.error,
         ),
       );
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
     }
+  }
+
+  Future<void> _autoLoginAfterRegister() async {
+    // Login otomatis setelah register
+    final result = await ref
+        .read(authRepositoryProvider)
+        .signIn(
+          email: _emailController.text.trim(),
+          password: _passwordController.text,
+        );
+
+    if (!mounted) return;
+
+    result.fold(
+      onSuccess: (userProfile) {
+        // Navigate based on user role
+        final route = userProfile.userRole == UserRole.patient
+            ? '/patient/home'
+            : '/family/home';
+
+        Navigator.of(context).pushReplacementNamed(route);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Selamat datang, ${userProfile.fullName}!'),
+            backgroundColor: AppColors.success,
+          ),
+        );
+      },
+      onFailure: (failure) {
+        setState(() => _isLoading = false);
+        // Jika auto-login gagal, arahkan ke login screen
+        Navigator.of(context).pushReplacementNamed('/login');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Registrasi berhasil! Silakan login.'),
+            backgroundColor: AppColors.success,
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -98,9 +148,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 Text(
                   AppStrings.registerTitle,
                   style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.bold,
+                  ),
                   textAlign: TextAlign.center,
                 ),
 
@@ -211,36 +261,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     children: [
                       Text(
                         AppStrings.userRole,
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w600),
                       ),
                       const SizedBox(height: AppDimensions.paddingS),
-                      RadioListTile<UserRole>(
-                        title: const Text(AppStrings.rolePatient),
-                        value: UserRole.patient,
-                        groupValue: _selectedRole,
-                        onChanged: _isLoading
-                            ? null
-                            : (value) {
-                                setState(() {
-                                  _selectedRole = value!;
-                                });
-                              },
-                        activeColor: AppColors.primary,
+                      // Custom radio buttons without deprecated widgets
+                      _buildRoleOption(
+                        UserRole.patient,
+                        AppStrings.rolePatient,
+                        Icons.person,
                       ),
-                      RadioListTile<UserRole>(
-                        title: const Text(AppStrings.roleFamily),
-                        value: UserRole.family,
-                        groupValue: _selectedRole,
-                        onChanged: _isLoading
-                            ? null
-                            : (value) {
-                                setState(() {
-                                  _selectedRole = value!;
-                                });
-                              },
-                        activeColor: AppColors.primary,
+                      const SizedBox(height: 8),
+                      _buildRoleOption(
+                        UserRole.family,
+                        AppStrings.roleFamily,
+                        Icons.family_restroom,
                       ),
                     ],
                   ),
@@ -252,7 +287,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ElevatedButton(
                   onPressed: _isLoading ? null : _handleRegister,
                   style: ElevatedButton.styleFrom(
-                    minimumSize: const Size.fromHeight(AppDimensions.buttonHeightL),
+                    minimumSize: const Size.fromHeight(
+                      AppDimensions.buttonHeightL,
+                    ),
                   ),
                   child: _isLoading
                       ? const SizedBox(
@@ -290,6 +327,69 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  /// Build custom role selection option (tanpa deprecated Radio widget)
+  Widget _buildRoleOption(UserRole role, String label, IconData icon) {
+    final isSelected = _selectedRole == role;
+    return InkWell(
+      onTap: _isLoading
+          ? null
+          : () {
+              setState(() {
+                _selectedRole = role;
+              });
+            },
+      borderRadius: BorderRadius.circular(AppDimensions.radiusM),
+      child: Container(
+        padding: const EdgeInsets.all(AppDimensions.paddingM),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? AppColors.primary.withValues(alpha: 0.1)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(AppDimensions.radiusM),
+          border: Border.all(
+            color: isSelected ? AppColors.primary : AppColors.divider,
+            width: isSelected ? 2 : 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            // Custom radio indicator
+            Container(
+              width: 24,
+              height: 24,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: isSelected
+                      ? AppColors.primary
+                      : AppColors.textTertiary,
+                  width: 2,
+                ),
+                color: isSelected ? AppColors.primary : Colors.transparent,
+              ),
+              child: isSelected
+                  ? const Icon(Icons.check, size: 16, color: Colors.white)
+                  : null,
+            ),
+            const SizedBox(width: AppDimensions.paddingM),
+            Icon(
+              icon,
+              color: isSelected ? AppColors.primary : AppColors.textSecondary,
+            ),
+            const SizedBox(width: AppDimensions.paddingS),
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected ? AppColors.primary : AppColors.textPrimary,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+              ),
+            ),
+          ],
         ),
       ),
     );
