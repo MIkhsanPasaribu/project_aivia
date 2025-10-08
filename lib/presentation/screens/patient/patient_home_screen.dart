@@ -19,7 +19,9 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
   // List of screens untuk bottom navigation
   final List<Widget> _screens = [
     const ActivityListScreen(),
-    const Center(child: Text('Kenali Wajah\n(Coming Soon)', textAlign: TextAlign.center)),
+    const Center(
+      child: Text('Kenali Wajah\n(Coming Soon)', textAlign: TextAlign.center),
+    ),
     const ProfileScreen(),
   ];
 
@@ -32,10 +34,7 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: _screens,
-      ),
+      body: IndexedStack(index: _selectedIndex, children: _screens),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           boxShadow: [
