@@ -22,7 +22,7 @@ class AppStrings {
   static const String registerHere = 'Daftar di sini';
   static const String haveAccount = 'Sudah punya akun?';
   static const String loginHere = 'Masuk di sini';
-  
+
   // User Roles
   static const String rolePatient = 'Pasien';
   static const String roleFamily = 'Keluarga/Wali';
@@ -63,7 +63,8 @@ class AppStrings {
 
   // Dialogs
   static const String confirmDelete = 'Konfirmasi Hapus';
-  static const String confirmDeleteMessage = 'Apakah Anda yakin ingin menghapus aktivitas ini?';
+  static const String confirmDeleteMessage =
+      'Apakah Anda yakin ingin menghapus aktivitas ini?';
   static const String yes = 'Ya';
   static const String no = 'Tidak';
   static const String ok = 'OK';
@@ -85,7 +86,8 @@ class AppStrings {
   static const String errorNetwork = 'Tidak dapat terhubung ke server.';
   static const String errorAuth = 'Email atau kata sandi salah.';
   static const String errorEmailExists = 'Email sudah terdaftar.';
-  static const String errorSessionExpired = 'Sesi Anda telah berakhir. Silakan masuk kembali.';
+  static const String errorSessionExpired =
+      'Sesi Anda telah berakhir. Silakan masuk kembali.';
 
   // Success Messages
   static const String successLogin = 'Berhasil masuk';
@@ -110,5 +112,6 @@ class AppStrings {
   // Emergency
   static const String emergency = 'Darurat';
   static const String emergencyButton = 'Tombol Darurat';
-  static const String emergencyConfirm = 'Tekan lama untuk mengirim peringatan darurat';
+  static const String emergencyConfirm =
+      'Tekan lama untuk mengirim peringatan darurat';
 }
