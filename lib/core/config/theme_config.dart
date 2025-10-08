@@ -10,7 +10,7 @@ class ThemeConfig {
   static ThemeData get lightTheme {
     return ThemeData(
       useMaterial3: true,
-      
+
       // Color Scheme
       colorScheme: ColorScheme.light(
         primary: AppColors.primary,

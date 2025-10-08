@@ -1,13 +1,47 @@
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 /// Konfigurasi Supabase untuk aplikasi AIVIA
+///
+/// Kredensial dibaca dari file .env untuk keamanan.
+/// Pastikan file .env sudah dibuat dari .env.example
 class SupabaseConfig {
   SupabaseConfig._(); // Private constructor
 
-  // TODO: Ganti dengan URL dan Key Supabase Anda
-  // Untuk development, gunakan project Supabase development
-  // Untuk production, gunakan project Supabase production
-  
-  static const String supabaseUrl = 'YOUR_SUPABASE_URL';
-  static const String supabaseAnonKey = 'YOUR_SUPABASE_ANON_KEY';
+  /// Supabase Project URL
+  /// Dapatkan dari: Supabase Dashboard > Project Settings > API > Project URL
+  static String get supabaseUrl {
+    final url = dotenv.env['SUPABASE_URL'];
+    if (url == null || url.isEmpty) {
+      throw Exception(
+        'SUPABASE_URL tidak ditemukan di file .env. '
+        'Pastikan file .env sudah dibuat dari .env.example',
+      );
+    }
+    return url;
+  }
+
+  /// Supabase Anon Key (Public Key)
+  /// Dapatkan dari: Supabase Dashboard > Project Settings > API > anon public
+  /// Key ini aman untuk digunakan di client-side karena dilindungi Row Level Security (RLS)
+  static String get supabaseAnonKey {
+    final key = dotenv.env['SUPABASE_ANON_KEY'];
+    if (key == null || key.isEmpty) {
+      throw Exception(
+        'SUPABASE_ANON_KEY tidak ditemukan di file .env. '
+        'Pastikan file .env sudah dibuat dari .env.example',
+      );
+    }
+    return key;
+  }
+
+  /// Environment mode (development/production)
+  static String get environment => dotenv.env['ENVIRONMENT'] ?? 'development';
+
+  /// Check if running in production
+  static bool get isProduction => environment == 'production';
+
+  /// Check if running in development
+  static bool get isDevelopment => environment == 'development';
 
   // Nama tabel database
   static const String tableProfiles = 'profiles';
