@@ -10,6 +10,7 @@ import 'package:project_aivia/presentation/screens/splash/splash_screen.dart';
 import 'package:project_aivia/presentation/screens/auth/login_screen.dart';
 import 'package:project_aivia/presentation/screens/auth/register_screen.dart';
 import 'package:project_aivia/presentation/screens/patient/patient_home_screen.dart';
+import 'package:project_aivia/presentation/screens/family/family_home_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -44,6 +45,7 @@ class MainApp extends StatelessWidget {
         '/login': (context) => const LoginScreen(),
         '/register': (context) => const RegisterScreen(),
         '/patient/home': (context) => const PatientHomeScreen(),
+        '/family/home': (context) => const FamilyHomeScreen(),
       },
     );
   }

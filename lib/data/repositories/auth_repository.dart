@@ -23,7 +23,7 @@ class AuthRepository {
   /// Register user baru
   ///
   /// Process:
-  /// 1. Signup ke Supabase Auth
+  /// 1. Signup ke Supabase Auth (with email confirmation disabled for dev)
   /// 2. Trigger database akan auto-create profile
   /// 3. Fetch profile yang baru dibuat
   Future<Result<UserProfile>> signUp({
@@ -34,31 +34,75 @@ class AuthRepository {
   }) async {
     try {
       // 1. Signup to Supabase Auth
+      // emailRedirectTo: null to disable email confirmation in development
       final response = await _supabase.auth.signUp(
         email: email,
         password: password,
         data: {'full_name': fullName, 'user_role': role.value},
+        emailRedirectTo: null, // Disable email confirmation
       );
 
       if (response.user == null) {
         throw const AuthException('Gagal membuat akun');
       }
 
-      // 2. Wait a bit for trigger to create profile
-      await Future.delayed(const Duration(milliseconds: 500));
+      // 2. Wait for trigger to create profile
+      await Future.delayed(const Duration(milliseconds: 1500));
 
-      // 3. Fetch created profile
-      final profileData = await _supabase
-          .from('profiles')
-          .select()
-          .eq('id', response.user!.id)
-          .single();
+      // 3. Fetch created profile with retry mechanism (exponential backoff)
+      UserProfile? profile;
+      int retries = 5;
+      int delayMs = 500;
 
-      final profile = UserProfile.fromJson(profileData);
+      while (retries > 0 && profile == null) {
+        try {
+          final profileData = await _supabase
+              .from('profiles')
+              .select()
+              .eq('id', response.user!.id)
+              .single();
+
+          profile = UserProfile.fromJson(profileData);
+        } on PostgrestException catch (e) {
+          // PGRST116 means no rows returned
+          if (e.code == 'PGRST116' && retries > 0) {
+            retries--;
+            if (retries > 0) {
+              await Future.delayed(Duration(milliseconds: delayMs));
+              delayMs = (delayMs * 1.5).toInt(); // Exponential backoff
+            }
+          } else {
+            rethrow;
+          }
+        } catch (e) {
+          retries--;
+          if (retries > 0) {
+            await Future.delayed(Duration(milliseconds: delayMs));
+            delayMs = (delayMs * 1.5).toInt(); // Exponential backoff
+          } else {
+            rethrow;
+          }
+        }
+      }
+
+      if (profile == null) {
+        throw const DatabaseException('Profile tidak dapat dibuat');
+      }
 
       return Success(profile);
     } on AuthException catch (e) {
-      if (e.message.contains('already registered')) {
+      // Handle rate limit error
+      if (e.message.contains('429') ||
+          e.message.contains('rate') ||
+          e.message.contains('email_send_rate_limit')) {
+        return const ResultFailure(
+          AuthFailure(
+            'Terlalu banyak permintaan. Silakan tunggu beberapa saat dan coba lagi.',
+            code: 'rate_limit',
+          ),
+        );
+      } else if (e.message.contains('already registered') ||
+          e.message.contains('already been registered')) {
         return const ResultFailure(
           AuthFailure('Email sudah terdaftar', code: 'user_exists'),
         );
@@ -69,10 +113,18 @@ class AuthRepository {
             code: 'weak_password',
           ),
         );
+      } else if (e.message.contains('email')) {
+        return const ResultFailure(
+          AuthFailure('Format email tidak valid', code: 'invalid_email'),
+        );
       }
-      return ResultFailure(AuthFailure(e.message, code: e.code));
+      return ResultFailure(
+        AuthFailure('Gagal membuat akun: ${e.message}', code: e.code),
+      );
     } on PostgrestException catch (e) {
-      return ResultFailure(DatabaseFailure(e.message, code: e.code));
+      return ResultFailure(
+        DatabaseFailure('Database error: ${e.message}', code: e.code),
+      );
     } catch (e) {
       return ResultFailure(
         UnknownFailure('Gagal membuat akun: ${e.toString()}'),
@@ -137,6 +189,20 @@ class AuthRepository {
       return ResultFailure(AuthFailure(e.message, code: e.code));
     } catch (e) {
       return ResultFailure(UnknownFailure('Gagal logout: ${e.toString()}'));
+    }
+  }
+
+  /// Force sign out (untuk timeout atau error)
+  /// Logout secara lokal tanpa call ke server
+  Future<Result<void>> forceSignOut() async {
+    try {
+      // Clear local session without server call
+      await _supabase.auth.signOut(scope: SignOutScope.local);
+      return const Success(null);
+    } catch (e) {
+      return ResultFailure(
+        UnknownFailure('Gagal force logout: ${e.toString()}'),
+      );
     }
   }
 
