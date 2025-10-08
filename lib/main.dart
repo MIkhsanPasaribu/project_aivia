@@ -1,0 +1,42 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/date_symbol_data_local.dart';
+import 'package:project_aivia/core/config/theme_config.dart';
+import 'package:project_aivia/core/constants/app_strings.dart';
+import 'package:project_aivia/presentation/screens/splash/splash_screen.dart';
+import 'package:project_aivia/presentation/screens/auth/login_screen.dart';
+import 'package:project_aivia/presentation/screens/auth/register_screen.dart';
+import 'package:project_aivia/presentation/screens/patient/patient_home_screen.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize Indonesian locale
+  await initializeDateFormatting('id_ID', null);
+  
+  runApp(
+    const ProviderScope(
+      child: MainApp(),
+    ),
+  );
+}
+
+class MainApp extends StatelessWidget {
+  const MainApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: AppStrings.appName,
+      debugShowCheckedModeBanner: false,
+      theme: ThemeConfig.lightTheme,
+      initialRoute: '/',
+      routes: {
+        '/': (context) => const SplashScreen(),
+        '/login': (context) => const LoginScreen(),
+        '/register': (context) => const RegisterScreen(),
+        '/patient/home': (context) => const PatientHomeScreen(),
+      },
+    );
+  }
+}
