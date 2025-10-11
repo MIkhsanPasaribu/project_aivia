@@ -5,6 +5,8 @@ import 'package:project_aivia/core/constants/app_strings.dart';
 import 'package:project_aivia/core/constants/app_dimensions.dart';
 import 'package:project_aivia/core/utils/logout_helper.dart';
 import 'package:project_aivia/presentation/providers/auth_provider.dart';
+import 'package:project_aivia/presentation/screens/patient/profile/edit_profile_screen.dart';
+import 'package:project_aivia/presentation/screens/common/settings_screen.dart';
 
 /// Profile Screen - Halaman profil pengguna
 class ProfileScreen extends ConsumerWidget {
@@ -141,10 +143,9 @@ class ProfileScreen extends ConsumerWidget {
                   title: 'Edit Profil',
                   subtitle: 'Ubah informasi pribadi Anda',
                   onTap: () {
-                    // TODO: Navigate to edit profile
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Fitur Edit Profil (Coming Soon)'),
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => const EditProfileScreen(),
                       ),
                     );
                   },
@@ -156,10 +157,23 @@ class ProfileScreen extends ConsumerWidget {
                   title: 'Notifikasi',
                   subtitle: 'Atur pengingat aktivitas',
                   onTap: () {
-                    // TODO: Navigate to notification settings
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Pengaturan Notifikasi (Coming Soon)'),
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => const SettingsScreen(),
+                      ),
+                    );
+                  },
+                ),
+
+                _buildMenuItem(
+                  context,
+                  icon: Icons.settings_outlined,
+                  title: 'Pengaturan',
+                  subtitle: 'Preferensi & konfigurasi aplikasi',
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => const SettingsScreen(),
                       ),
                     );
                   },
