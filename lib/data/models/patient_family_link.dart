@@ -1,7 +1,7 @@
 import 'user_profile.dart';
 
 /// Model untuk relasi antara pasien dan anggota keluarga/wali
-/// 
+///
 /// Representasi dari tabel `patient_family_links` di database.
 /// Digunakan untuk:
 /// - Menghubungkan pasien dengan family member
@@ -63,10 +63,14 @@ class PatientFamilyLink {
       canViewLocation: json['can_view_location'] as bool? ?? true,
       createdAt: DateTime.parse(json['created_at'] as String),
       patientProfile: json['patient_profile'] != null
-          ? UserProfile.fromJson(json['patient_profile'] as Map<String, dynamic>)
+          ? UserProfile.fromJson(
+              json['patient_profile'] as Map<String, dynamic>,
+            )
           : null,
       familyMemberProfile: json['family_member_profile'] != null
-          ? UserProfile.fromJson(json['family_member_profile'] as Map<String, dynamic>)
+          ? UserProfile.fromJson(
+              json['family_member_profile'] as Map<String, dynamic>,
+            )
           : null,
     );
   }
