@@ -1,376 +1,254 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-import 'package:supabase_flutter/supabase_flutter.dart';import 'package:supabase_flutter/supabase_flutter.dart';
-
-import '../../data/repositories/patient_family_repository.dart';import '../../data/repositories/patient_family_repository.dart';
-
-import '../../data/models/patient_family_link.dart';import '../../data/models/patient_family_link.dart';
-
-import '../../core/errors/failures.dart';import '../../core/errors/failures.dart';
-
-import '../../core/utils/result.dart';import '../../core/utils/result.dart';
-
-
-
-/// Provider untuk PatientFamilyRepository instance/// Provider untuk PatientFamilyRepository instance
-
-final patientFamilyRepositoryProvider = Provider<PatientFamilyRepository>((ref) {final patientFamilyRepositoryProvider = Provider<PatientFamilyRepository>((ref) {
-
-  final supabase = Supabase.instance.client;  final supabase = Supabase.instance.client;
-
-  return PatientFamilyRepository(supabase);  return PatientFamilyRepository(supabase);
-
-});});
-
-
-
-/// Stream provider untuk linked patients dari current user (family member)/// Stream provider untuk linked patients dari current user (family member)
-
-/// /// 
-
-/// Auto-updates ketika ada perubahan di database via Supabase Realtime/// Auto-updates ketika ada perubahan di database via Supabase Realtime
-
-final linkedPatientsStreamProvider = StreamProvider<List<PatientFamilyLink>>((ref) {final linkedPatientsStreamProvider = StreamProvider<List<PatientFamilyLink>>((ref) {
-
-  final supabase = Supabase.instance.client;  final supabase = Supabase.instance.client;
-
-  final userId = supabase.auth.currentUser?.id;  final userId = supabase.auth.currentUser?.id;
-
-
-
-  if (userId == null) {  if (userId == null) {
-
-    return Stream.error(AuthFailure('User tidak terautentikasi'));    return Stream.error(AuthFailure('User tidak terautentikasi'));
-
-  }  }
-
-
-
-  return supabase  return supabase
-
-      .from('patient_family_links')      .from('patient_family_links')
-
-      .stream(primaryKey: ['id'])      .stream(primaryKey: ['id'])
-
-      .eq('family_member_id', userId)      .eq('family_member_id', userId)
-
-      .order('created_at', ascending: false)      .order('created_at', ascending: false)
-
-      .map((maps) {      .map((maps) {
-
-    return maps.map((json) {    return maps.map((json) {
-
-      // Manual join dengan profiles untuk patient_profile      // Manual join dengan profiles untuk patient_profile
-
-      // Note: Supabase stream tidak support nested select, jadi kita query manual      // Note: Supabase stream tidak support nested select, jadi kita query manual
-
-      return PatientFamilyLink.fromJson(json);      return PatientFamilyLink.fromJson(json);
-
-    }).toList();    }).toList();
-
-  });  });
-
-});});
-
-
-
-/// Provider untuk get single link by ID/// Provider untuk get single link by ID
-
-final linkByIdProvider = FutureProvider.family<PatientFamilyLink, String>((ref, linkId) async {final linkByIdProvider = FutureProvider.family<PatientFamilyLink, String>((ref, linkId) async {
-
-  final repository = ref.watch(patientFamilyRepositoryProvider);  final repository = ref.watch(patientFamilyRepositoryProvider);
-
-  final result = await repository.getLinkById(linkId);  final result = await repository.getLinkById(linkId);
-
-
-
-  return result.fold(  return result.when(
-
-    onSuccess: (link) => link,    success: (link) => link,
-
-    onFailure: (failure) => throw failure.message,    failure: (failure) => throw failure.message,
-
-  );  );
-
-});});
-
-
-
-/// Provider untuk check permissions/// Provider untuk check permissions
-
-final canEditPatientActivitiesProvider = FutureProvider.family<bool, String>((ref, patientId) async {final canEditPatientActivitiesProvider = FutureProvider.family<bool, String>((ref, patientId) async {
-
-  final repository = ref.watch(patientFamilyRepositoryProvider);  final repository = ref.watch(patientFamilyRepositoryProvider);
-
-  final supabase = Supabase.instance.client;  final supabase = Supabase.instance.client;
-
-  final familyMemberId = supabase.auth.currentUser?.id;  final familyMemberId = supabase.auth.currentUser?.id;
-
-
-
-  if (familyMemberId == null) {  if (familyMemberId == null) {
-
-    return false;    return false;
-
-  }  }
-
-
-
-  final result = await repository.canEditPatientActivities(  final result = await repository.canEditPatientActivities(
-
-    patientId: patientId,    patientId: patientId,
-
-    familyMemberId: familyMemberId,    familyMemberId: familyMemberId,
-
-  );  );
-
-
-
-  return result.fold(  return result.when(
-
-    onSuccess: (canEdit) => canEdit,    success: (canEdit) => canEdit,
-
-    onFailure: (_) => false,    failure: (_) => false,
-
-  );  );
-
-});});
-
-
-
-/// Provider untuk check location permissions/// Provider untuk check location permissions
-
-final canViewPatientLocationProvider = FutureProvider.family<bool, String>((ref, patientId) async {final canViewPatientLocationProvider = FutureProvider.family<bool, String>((ref, patientId) async {
-
-  final repository = ref.watch(patientFamilyRepositoryProvider);  final repository = ref.watch(patientFamilyRepositoryProvider);
-
-  final supabase = Supabase.instance.client;  final supabase = Supabase.instance.client;
-
-  final familyMemberId = supabase.auth.currentUser?.id;  final familyMemberId = supabase.auth.currentUser?.id;
-
-
-
-  if (familyMemberId == null) {  if (familyMemberId == null) {
-
-    return false;    return false;
-
-  }  }
-
-
-
-  final result = await repository.canViewPatientLocation(  final result = await repository.canViewPatientLocation(
-
-    patientId: patientId,    patientId: patientId,
-
-    familyMemberId: familyMemberId,    familyMemberId: familyMemberId,
-
-  );  );
-
-
-
-  return result.fold(  return result.when(
-
-    onSuccess: (canView) => canView,    success: (canView) => canView,
-
-    onFailure: (_) => false,    failure: (_) => false,
-
-  );  );
-
-});});
-
-
-
-/// StateNotifier controller untuk patient-family link operations/// StateNotifier controller untuk patient-family link operations
-
-class PatientFamilyController extends StateNotifier<AsyncValue<List<PatientFamilyLink>>> {class PatientFamilyController extends StateNotifier<AsyncValue<List<PatientFamilyLink>>> {
-
-  final PatientFamilyRepository _repository;  final PatientFamilyRepository _repository;
-
-  final String _familyMemberId;  final String _familyMemberId;
-
-
-
-  PatientFamilyController(this._repository, this._familyMemberId)  PatientFamilyController(this._repository, this._familyMemberId)
-
-      : super(const AsyncValue.loading()) {      : super(const AsyncValue.loading()) {
-
-    _loadLinkedPatients();    _loadLinkedPatients();
-
-  }  }
-
-
-
-  /// Load linked patients  /// Load linked patients
-
-  Future<void> _loadLinkedPatients() async {  Future<void> _loadLinkedPatients() async {
-
-    state = const AsyncValue.loading();    state = const AsyncValue.loading();
-
-
-
-    final result = await _repository.getLinkedPatients(_familyMemberId);    final result = await _repository.getLinkedPatients(_familyMemberId);
-
-
-
-    state = result.fold(    state = result.when(
-
-      onSuccess: (links) => AsyncValue.data(links),      success: (links) => AsyncValue.data(links),
-
-      onFailure: (failure) => AsyncValue.error(failure.message, StackTrace.current),      failure: (failure) => AsyncValue.error(failure.message, StackTrace.current),
-
-    );    );
-
-  }  }
-
-
-
-  /// Refresh linked patients list  /// Refresh linked patients list
-
-  Future<void> refreshLinkedPatients() async {  Future<void> refreshLinkedPatients() async {
-
-    await _loadLinkedPatients();    await _loadLinkedPatients();
-
-  }  }
-
-
-
-  /// Create new patient-family link  /// Create new patient-family link
-
-  Future<Result<PatientFamilyLink>> createLink({  Future<Result<PatientFamilyLink>> createLink({
-
-    required String patientId,    required String patientId,
-
-    required String relationshipType,    required String relationshipType,
-
-    bool isPrimaryCaregiver = false,    bool isPrimaryCaregiver = false,
-
-  }) async {  }) async {
-
-    final result = await _repository.createLink(    final result = await _repository.createLink(
-
-      patientId: patientId,      patientId: patientId,
-
-      familyMemberId: _familyMemberId,      familyMemberId: _familyMemberId,
-
-      relationshipType: relationshipType,      relationshipType: relationshipType,
-
-      isPrimaryCaregiver: isPrimaryCaregiver,      isPrimaryCaregiver: isPrimaryCaregiver,
-
-    );    );
-
-
-
-    if (result.isSuccess) {    if (result is Success<PatientFamilyLink>) {
-
-      // Reload list after successful creation      // Reload list after successful creation
-
-      await _loadLinkedPatients();      await _loadLinkedPatients();
-
-    }    }
-
-
-
-    return result;    return result;
-
-  }  }
-
-
-
-  /// Update link permissions  /// Update link permissions
-
-  Future<Result<PatientFamilyLink>> updateLinkPermissions({  Future<Result<PatientFamilyLink>> updateLinkPermissions({
-
-    required String linkId,    required String linkId,
-
-    bool? isPrimaryCaregiver,    bool? isPrimaryCaregiver,
-
-    bool? canEditActivities,    bool? canEditActivities,
-
-    bool? canViewLocation,    bool? canViewLocation,
-
-  }) async {  }) async {
-
-    final result = await _repository.updateLinkPermissions(    final result = await _repository.updateLinkPermissions(
-
-      linkId: linkId,      linkId: linkId,
-
-      isPrimaryCaregiver: isPrimaryCaregiver,      isPrimaryCaregiver: isPrimaryCaregiver,
-
-      canEditActivities: canEditActivities,      canEditActivities: canEditActivities,
-
-      canViewLocation: canViewLocation,      canViewLocation: canViewLocation,
-
-    );    );
-
-
-
-    if (result.isSuccess) {    if (result is Success<PatientFamilyLink>) {
-
-      // Reload list after successful update      // Reload list after successful update
-
-      await _loadLinkedPatients();      await _loadLinkedPatients();
-
-    }    }
-
-
-
-    return result;    return result;
-
-  }  }
-
-
-
-  /// Delete link (unlink patient)  /// Delete link (unlink patient)
-
-  Future<Result<void>> deleteLink(String linkId) async {  Future<Result<void>> deleteLink(String linkId) async {
-
-    final result = await _repository.deleteLink(linkId);    final result = await _repository.deleteLink(linkId);
-
-
-
-    if (result.isSuccess) {    if (result is Success<void>) {
-
-      // Reload list after successful deletion      // Reload list after successful deletion
-
-      await _loadLinkedPatients();      await _loadLinkedPatients();
-
-    }    }
-
-
-
-    return result;    return result;
-
-  }  }
-
-
-
-  /// Search patient by email  /// Search patient by email
-
-  Future<Result<dynamic>> searchPatientByEmail(String email) async {  Future<Result<dynamic>> searchPatientByEmail(String email) async {
-
-    return await _repository.searchPatientByEmail(email);    return await _repository.searchPatientByEmail(email);
-
-  }  }
-
-}}
-
-
-
-/// Provider untuk PatientFamilyController/// Provider untuk PatientFamilyController
-
-final patientFamilyControllerProvider =final patientFamilyControllerProvider =
-
-    StateNotifierProvider<PatientFamilyController, AsyncValue<List<PatientFamilyLink>>>((ref) {    StateNotifierProvider<PatientFamilyController, AsyncValue<List<PatientFamilyLink>>>((ref) {
-
-  final repository = ref.watch(patientFamilyRepositoryProvider);  final repository = ref.watch(patientFamilyRepositoryProvider);
-
-  final supabase = Supabase.instance.client;  final supabase = Supabase.instance.client;
-
-  final userId = supabase.auth.currentUser?.id ?? '';  final userId = supabase.auth.currentUser?.id ?? '';
-
-
-
-  return PatientFamilyController(repository, userId);  return PatientFamilyController(repository, userId);
-
-});});
-
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../data/models/patient_family_link.dart';
+import '../../data/models/user_profile.dart';
+import '../../data/repositories/patient_family_repository.dart';
+import '../../core/utils/result.dart';
+import '../../core/errors/failures.dart';
+
+/// Provider untuk PatientFamilyRepository instance
+final patientFamilyRepositoryProvider = Provider<PatientFamilyRepository>((
+  ref,
+) {
+  return PatientFamilyRepository(Supabase.instance.client);
+});
+
+/// Provider untuk stream linked patients dari family member yang sedang login
+///
+/// Mengembalikan real-time list pasien yang di-link ke family member
+final linkedPatientsStreamProvider = StreamProvider<List<PatientFamilyLink>>((
+  ref,
+) async* {
+  final repository = ref.watch(patientFamilyRepositoryProvider);
+  final currentUserId = Supabase.instance.client.auth.currentUser?.id;
+
+  if (currentUserId == null) {
+    yield [];
+    return;
+  }
+
+  // Real-time stream dari Supabase
+  final stream = Supabase.instance.client
+      .from('patient_family_links')
+      .stream(primaryKey: ['id'])
+      .eq('family_member_id', currentUserId)
+      .order('created_at', ascending: false);
+
+  await for (final data in stream) {
+    try {
+      final links = data
+          .map((json) => PatientFamilyLink.fromJson(json))
+          .toList();
+
+      // Fetch patient profiles untuk setiap link
+      final linksWithProfiles = <PatientFamilyLink>[];
+      for (final link in links) {
+        final profileResult = await repository.getLinkById(link.id);
+        profileResult.fold(
+          onSuccess: (linkWithProfile) {
+            linksWithProfiles.add(linkWithProfile);
+          },
+          onFailure: (_) {
+            // Jika gagal fetch profile, tetap tambahkan link tanpa profile
+            linksWithProfiles.add(link);
+          },
+        );
+      }
+
+      yield linksWithProfiles;
+    } catch (e) {
+      // Jika ada error, yield list kosong
+      yield [];
+    }
+  }
+});
+
+/// Provider untuk PatientFamilyController
+/// Menyediakan methods untuk manage patient-family relationships
+final patientFamilyControllerProvider =
+    StateNotifierProvider<PatientFamilyController, AsyncValue<void>>((ref) {
+      return PatientFamilyController(
+        ref.watch(patientFamilyRepositoryProvider),
+      );
+    });
+
+/// Controller untuk manage operasi patient-family links
+class PatientFamilyController extends StateNotifier<AsyncValue<void>> {
+  final PatientFamilyRepository _repository;
+
+  PatientFamilyController(this._repository)
+    : super(const AsyncValue.data(null));
+
+  /// Get semua linked patients untuk family member
+  Future<Result<List<PatientFamilyLink>>> getLinkedPatients(
+    String familyMemberId,
+  ) async {
+    return await _repository.getLinkedPatients(familyMemberId);
+  }
+
+  /// Get semua family members untuk patient
+  Future<Result<List<PatientFamilyLink>>> getFamilyMembers(
+    String patientId,
+  ) async {
+    return await _repository.getFamilyMembers(patientId);
+  }
+
+  /// Get single link dengan joined profiles
+  Future<Result<PatientFamilyLink>> getLinkById(String linkId) async {
+    return await _repository.getLinkById(linkId);
+  }
+
+  /// Create link antara patient dan family member
+  ///
+  /// Params:
+  /// - patientEmail: Email patient yang akan di-link
+  /// - relationshipType: Tipe hubungan (dari RelationshipTypes helper)
+  /// - isPrimaryCaregiver: Apakah primary caregiver
+  /// - canEditActivities: Permission edit activities
+  /// - canViewLocation: Permission view location
+  Future<Result<PatientFamilyLink>> createLink({
+    required String patientEmail,
+    required String relationshipType,
+    bool isPrimaryCaregiver = false,
+    bool canEditActivities = true,
+    bool canViewLocation = true,
+  }) async {
+    state = const AsyncValue.loading();
+
+    // 1. Cari patient berdasarkan email
+    final searchResult = await _repository.searchPatientByEmail(patientEmail);
+
+    return await searchResult.fold(
+      onSuccess: (patient) async {
+        // 2. Validasi role patient
+        if (patient.userRole != UserRole.patient) {
+          state = AsyncValue.error(
+            'Email tersebut bukan akun pasien',
+            StackTrace.current,
+          );
+          return ResultFailure(
+            ValidationFailure('Email tersebut bukan akun pasien'),
+          );
+        }
+
+        // 3. Get current user ID (family member)
+        final currentUserId = Supabase.instance.client.auth.currentUser?.id;
+        if (currentUserId == null) {
+          state = AsyncValue.error(
+            'User tidak terautentikasi',
+            StackTrace.current,
+          );
+          return ResultFailure(AuthFailure('User tidak terautentikasi'));
+        }
+
+        // 4. Create link
+        final createResult = await _repository.createLink(
+          patientId: patient.id,
+          familyMemberId: currentUserId,
+          relationshipType: relationshipType,
+          isPrimaryCaregiver: isPrimaryCaregiver,
+          canEditActivities: canEditActivities,
+          canViewLocation: canViewLocation,
+        );
+
+        createResult.fold(
+          onSuccess: (_) {
+            state = const AsyncValue.data(null);
+          },
+          onFailure: (failure) {
+            state = AsyncValue.error(failure.message, StackTrace.current);
+          },
+        );
+
+        return createResult;
+      },
+      onFailure: (failure) {
+        state = AsyncValue.error(failure.message, StackTrace.current);
+        return ResultFailure(failure);
+      },
+    );
+  }
+
+  /// Update permissions untuk link
+  Future<Result<void>> updateLinkPermissions({
+    required String linkId,
+    bool? canEditActivities,
+    bool? canViewLocation,
+    bool? isPrimaryCaregiver,
+  }) async {
+    state = const AsyncValue.loading();
+
+    final result = await _repository.updateLinkPermissions(
+      linkId: linkId,
+      canEditActivities: canEditActivities,
+      canViewLocation: canViewLocation,
+      isPrimaryCaregiver: isPrimaryCaregiver,
+    );
+
+    result.fold(
+      onSuccess: (_) {
+        state = const AsyncValue.data(null);
+      },
+      onFailure: (failure) {
+        state = AsyncValue.error(failure.message, StackTrace.current);
+      },
+    );
+
+    return result;
+  }
+
+  /// Delete link (unlink patient dari family)
+  Future<Result<void>> deleteLink(String linkId) async {
+    state = const AsyncValue.loading();
+
+    final result = await _repository.deleteLink(linkId);
+
+    result.fold(
+      onSuccess: (_) {
+        state = const AsyncValue.data(null);
+      },
+      onFailure: (failure) {
+        state = AsyncValue.error(failure.message, StackTrace.current);
+      },
+    );
+
+    return result;
+  }
+
+  /// Check apakah family member bisa edit activities patient
+  Future<bool> canEditPatientActivities({
+    required String patientId,
+    required String familyMemberId,
+  }) async {
+    final result = await _repository.canEditPatientActivities(
+      patientId: patientId,
+      familyMemberId: familyMemberId,
+    );
+
+    return result.fold(
+      onSuccess: (canEdit) => canEdit,
+      onFailure: (_) => false,
+    );
+  }
+
+  /// Check apakah family member bisa view location patient
+  Future<bool> canViewPatientLocation({
+    required String patientId,
+    required String familyMemberId,
+  }) async {
+    final result = await _repository.canViewPatientLocation(
+      patientId: patientId,
+      familyMemberId: familyMemberId,
+    );
+
+    return result.fold(
+      onSuccess: (canView) => canView,
+      onFailure: (_) => false,
+    );
+  }
+
+  /// Search patient by email (untuk form linking)
+  Future<Result<UserProfile>> searchPatientByEmail(String email) async {
+    return await _repository.searchPatientByEmail(email);
+  }
+}
