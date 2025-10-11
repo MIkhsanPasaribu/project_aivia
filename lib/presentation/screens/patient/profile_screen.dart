@@ -7,6 +7,7 @@ import 'package:project_aivia/core/utils/logout_helper.dart';
 import 'package:project_aivia/presentation/providers/auth_provider.dart';
 import 'package:project_aivia/presentation/screens/patient/profile/edit_profile_screen.dart';
 import 'package:project_aivia/presentation/screens/common/settings_screen.dart';
+import 'package:project_aivia/presentation/screens/common/help_screen.dart';
 
 /// Profile Screen - Halaman profil pengguna
 class ProfileScreen extends ConsumerWidget {
@@ -185,9 +186,11 @@ class ProfileScreen extends ConsumerWidget {
                   title: 'Bantuan',
                   subtitle: 'Panduan penggunaan aplikasi',
                   onTap: () {
-                    // TODO: Navigate to help
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Bantuan (Coming Soon)')),
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const HelpScreen(),
+                      ),
                     );
                   },
                 ),
