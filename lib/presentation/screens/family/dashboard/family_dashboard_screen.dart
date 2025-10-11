@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/app_dimensions.dart';
-import '../../../core/constants/app_strings.dart';
-import '../../../data/models/patient_family_link.dart';
-import '../../providers/patient_family_provider.dart';
+import '../../../../core/constants/app_colors.dart';
+import '../../../../core/constants/app_dimensions.dart';
+import '../../../../core/constants/app_strings.dart';
+import '../../../../data/models/patient_family_link.dart';
+import '../../../providers/patient_family_provider.dart';
+import '../../../providers/activity_provider.dart';
+import '../patients/link_patient_screen.dart';
 
 /// Dashboard utama untuk Family Member
 ///
@@ -42,13 +44,22 @@ class FamilyDashboardScreen extends ConsumerWidget {
         error: (error, stack) => _buildErrorState(context, error.toString()),
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          // TODO: Navigate to Link Patient Screen
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Fitur Link Patient akan segera tersedia'),
-            ),
+        onPressed: () async {
+          // Navigate ke Link Patient Screen
+          final result = await Navigator.push<bool>(
+            context,
+            MaterialPageRoute(builder: (context) => const LinkPatientScreen()),
           );
+
+          // Jika berhasil link patient, show snackbar
+          if (result == true && context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('✅ Pasien berhasil ditambahkan!'),
+                backgroundColor: AppColors.success,
+              ),
+            );
+          }
         },
         backgroundColor: AppColors.primary,
         icon: const Icon(Icons.person_add),
@@ -313,10 +324,12 @@ class FamilyDashboardScreen extends ConsumerWidget {
                 children: [
                   // Activities Count
                   Expanded(
-                    child: _buildStatItem(
+                    child: _buildStatItemWithWidget(
                       icon: Icons.event_note,
                       label: 'Aktivitas Hari Ini',
-                      value: '0', // TODO: Get from activities repository
+                      valueWidget: _ActivityCountWidget(
+                        patientId: link.patientId,
+                      ),
                       color: AppColors.primary,
                     ),
                   ),
@@ -408,7 +421,7 @@ class FamilyDashboardScreen extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.all(AppDimensions.paddingS),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(AppDimensions.radiusM),
       ),
       child: Row(
@@ -440,6 +453,83 @@ class FamilyDashboardScreen extends ConsumerWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  /// Variant of _buildStatItem that accepts a widget for the value
+  Widget _buildStatItemWithWidget({
+    required IconData icon,
+    required String label,
+    required Widget valueWidget,
+    required Color color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(AppDimensions.paddingS),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(AppDimensions.radiusM),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 20, color: color),
+          const SizedBox(width: AppDimensions.paddingS),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                valueWidget,
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Consumer widget untuk menampilkan aktivitas count real-time
+class _ActivityCountWidget extends ConsumerWidget {
+  final String patientId;
+
+  const _ActivityCountWidget({required this.patientId});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final todayActivitiesAsync = ref.watch(todayActivitiesProvider(patientId));
+
+    return todayActivitiesAsync.when(
+      data: (activities) {
+        return Text(
+          activities.length.toString(),
+          style: const TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: AppColors.textPrimary,
+          ),
+        );
+      },
+      loading: () => const SizedBox(
+        width: 20,
+        height: 20,
+        child: CircularProgressIndicator(strokeWidth: 2),
+      ),
+      error: (error, stack) => const Text(
+        '-',
+        style: TextStyle(
+          fontSize: 24,
+          fontWeight: FontWeight.bold,
+          color: AppColors.textSecondary,
+        ),
       ),
     );
   }
