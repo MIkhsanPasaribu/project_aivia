@@ -24,6 +24,9 @@ class UserProfile {
   final String fullName;
   final UserRole userRole;
   final String? avatarUrl;
+  final String? phoneNumber;
+  final DateTime? dateOfBirth;
+  final String? address;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -33,6 +36,9 @@ class UserProfile {
     required this.fullName,
     required this.userRole,
     this.avatarUrl,
+    this.phoneNumber,
+    this.dateOfBirth,
+    this.address,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -45,6 +51,11 @@ class UserProfile {
       fullName: json['full_name'] as String,
       userRole: UserRole.fromString(json['user_role'] as String),
       avatarUrl: json['avatar_url'] as String?,
+      phoneNumber: json['phone_number'] as String?,
+      dateOfBirth: json['date_of_birth'] != null
+          ? DateTime.parse(json['date_of_birth'] as String)
+          : null,
+      address: json['address'] as String?,
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
     );
@@ -58,6 +69,9 @@ class UserProfile {
       'full_name': fullName,
       'user_role': userRole.value,
       'avatar_url': avatarUrl,
+      'phone_number': phoneNumber,
+      'date_of_birth': dateOfBirth?.toIso8601String().split('T')[0],
+      'address': address,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
     };
@@ -70,6 +84,9 @@ class UserProfile {
     String? fullName,
     UserRole? userRole,
     String? avatarUrl,
+    String? phoneNumber,
+    DateTime? dateOfBirth,
+    String? address,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -79,6 +96,9 @@ class UserProfile {
       fullName: fullName ?? this.fullName,
       userRole: userRole ?? this.userRole,
       avatarUrl: avatarUrl ?? this.avatarUrl,
+      phoneNumber: phoneNumber ?? this.phoneNumber,
+      dateOfBirth: dateOfBirth ?? this.dateOfBirth,
+      address: address ?? this.address,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -99,6 +119,9 @@ class UserProfile {
         other.fullName == fullName &&
         other.userRole == userRole &&
         other.avatarUrl == avatarUrl &&
+        other.phoneNumber == phoneNumber &&
+        other.dateOfBirth == dateOfBirth &&
+        other.address == address &&
         other.createdAt == createdAt &&
         other.updatedAt == updatedAt;
   }
@@ -110,6 +133,9 @@ class UserProfile {
         fullName.hashCode ^
         userRole.hashCode ^
         avatarUrl.hashCode ^
+        phoneNumber.hashCode ^
+        dateOfBirth.hashCode ^
+        address.hashCode ^
         createdAt.hashCode ^
         updatedAt.hashCode;
   }
