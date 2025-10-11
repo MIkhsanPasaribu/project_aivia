@@ -6,6 +6,7 @@ import '../../../../core/constants/app_strings.dart';
 import '../../../../data/models/patient_family_link.dart';
 import '../../../providers/patient_family_provider.dart';
 import '../../../providers/activity_provider.dart';
+import '../../../providers/location_provider.dart';
 import '../patients/link_patient_screen.dart';
 
 /// Dashboard utama untuk Family Member
@@ -38,7 +39,7 @@ class FamilyDashboardScreen extends ConsumerWidget {
           if (links.isEmpty) {
             return _buildEmptyState(context);
           }
-          return _buildPatientsList(context, links);
+          return _buildPatientsList(context, ref, links);
         },
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stack) => _buildErrorState(context, error.toString()),
@@ -174,11 +175,23 @@ class FamilyDashboardScreen extends ConsumerWidget {
 
   Widget _buildPatientsList(
     BuildContext context,
+    WidgetRef ref,
     List<PatientFamilyLink> links,
   ) {
     return RefreshIndicator(
       onRefresh: () async {
-        // TODO: Implement refresh
+        // Invalidate providers untuk refresh data
+        // This will trigger re-fetch of activities and locations
+        for (final link in links) {
+          // Invalidate activity provider for this patient
+          ref.invalidate(todayActivitiesProvider(link.patientId));
+
+          // Invalidate location provider for this patient
+          ref.invalidate(formattedLastLocationProvider(link.patientId));
+        }
+
+        // Wait a bit untuk animation
+        await Future.delayed(const Duration(milliseconds: 500));
       },
       child: ListView.builder(
         padding: const EdgeInsets.all(AppDimensions.paddingM),
@@ -337,10 +350,12 @@ class FamilyDashboardScreen extends ConsumerWidget {
 
                   // Last Location Update
                   Expanded(
-                    child: _buildStatItem(
+                    child: _buildStatItemWithWidget(
                       icon: Icons.location_on,
                       label: 'Lokasi Terakhir',
-                      value: '-', // TODO: Get from locations repository
+                      valueWidget: _LastLocationWidget(
+                        patientId: link.patientId,
+                      ),
                       color: AppColors.secondary,
                     ),
                   ),
@@ -408,51 +423,6 @@ class FamilyDashboardScreen extends ConsumerWidget {
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildStatItem({
-    required IconData icon,
-    required String label,
-    required String value,
-    required Color color,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(AppDimensions.paddingS),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(AppDimensions.radiusM),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, size: 20, color: color),
-          const SizedBox(width: AppDimensions.paddingS),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  value,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: AppColors.textSecondary,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -528,6 +498,48 @@ class _ActivityCountWidget extends ConsumerWidget {
         style: TextStyle(
           fontSize: 24,
           fontWeight: FontWeight.bold,
+          color: AppColors.textSecondary,
+        ),
+      ),
+    );
+  }
+}
+
+/// Consumer widget untuk menampilkan last location real-time
+class _LastLocationWidget extends ConsumerWidget {
+  final String patientId;
+
+  const _LastLocationWidget({required this.patientId});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final formattedLocationAsync = ref.watch(
+      formattedLastLocationProvider(patientId),
+    );
+
+    return formattedLocationAsync.when(
+      data: (location) {
+        return Text(
+          location,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textPrimary,
+          ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        );
+      },
+      loading: () => const SizedBox(
+        width: 16,
+        height: 16,
+        child: CircularProgressIndicator(strokeWidth: 2),
+      ),
+      error: (error, stack) => const Text(
+        'Unknown',
+        style: TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
           color: AppColors.textSecondary,
         ),
       ),
