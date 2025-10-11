@@ -39,6 +39,15 @@ class AppStrings {
   static const String navActivities = 'Kelola Aktivitas';
   static const String navKnownPersons = 'Orang Dikenal';
 
+  // Family Dashboard
+  static const String familyDashboard = 'Dashboard Keluarga';
+  static const String linkedPatients = 'Pasien yang Dimonitor';
+  static const String addPatient = 'Tambah Pasien';
+  static const String noPatients = 'Belum Ada Pasien';
+  static const String linkPatientDescription =
+      'Anda belum menambahkan pasien untuk dimonitor.\n'
+      'Tekan tombol "Tambah Pasien" untuk menghubungkan dengan pasien.';
+
   // Activity Screens
   static const String activityTitle = 'Jurnal Aktivitas';
   static const String addActivity = 'Tambah Aktivitas';
