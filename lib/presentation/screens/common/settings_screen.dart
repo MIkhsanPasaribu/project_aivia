@@ -4,6 +4,7 @@ import 'package:project_aivia/core/constants/app_colors.dart';
 import 'package:project_aivia/core/constants/app_strings.dart';
 import 'package:project_aivia/core/constants/app_dimensions.dart';
 import 'package:project_aivia/core/utils/logout_helper.dart';
+import 'package:project_aivia/presentation/screens/common/help_screen.dart';
 
 /// Settings Screen - Halaman pengaturan aplikasi
 class SettingsScreen extends ConsumerWidget {
@@ -136,7 +137,10 @@ class SettingsScreen extends ConsumerWidget {
             subtitle: 'Panduan penggunaan aplikasi',
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
-              _showHelpDialog(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const HelpScreen()),
+              );
             },
           ),
 
@@ -315,48 +319,6 @@ class SettingsScreen extends ConsumerWidget {
           style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
         ),
       ],
-    );
-  }
-
-  void _showHelpDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Bantuan & Dukungan'),
-          content: const SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'Fitur Utama:',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                SizedBox(height: AppDimensions.paddingS),
-                Text('• Jurnal Aktivitas: Catat dan ingatkan aktivitas harian'),
-                Text('• Kenali Wajah: Kenali orang-orang terdekat'),
-                Text('• Pelacakan Lokasi: Pantau lokasi secara real-time'),
-                Text('• Tombol Darurat: Hubungi kontak darurat'),
-                SizedBox(height: AppDimensions.paddingM),
-                Text(
-                  'Butuh Bantuan?',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                SizedBox(height: AppDimensions.paddingS),
-                Text('Email: support@aivia.app'),
-                Text('WhatsApp: +62 812-3456-7890'),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Tutup'),
-            ),
-          ],
-        );
-      },
     );
   }
 }
