@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image/image.dart' as img;
@@ -7,6 +6,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:project_aivia/core/utils/result.dart';
 import 'package:project_aivia/core/errors/failures.dart';
+import 'package:project_aivia/core/constants/app_colors.dart';
 
 /// Service untuk handle image upload, crop, resize, dan delete
 /// Digunakan untuk avatar profile dan future face recognition
@@ -78,8 +78,8 @@ class ImageUploadService {
         uiSettings: [
           AndroidUiSettings(
             toolbarTitle: 'Crop Avatar',
-            toolbarColor: const Color(0xFFA8DADC),
-            toolbarWidgetColor: const Color(0xFF333333),
+            toolbarColor: AppColors.primary,
+            toolbarWidgetColor: AppColors.textPrimary,
             initAspectRatio: CropAspectRatioPreset.square,
             lockAspectRatio: true,
             hideBottomControls: false,
@@ -93,9 +93,7 @@ class ImageUploadService {
       );
 
       if (croppedFile == null) {
-        return const ResultFailure(
-          ValidationFailure('Crop dibatalkan'),
-        );
+        return const ResultFailure(ValidationFailure('Crop dibatalkan'));
       }
 
       return Success(File(croppedFile.path));
@@ -114,9 +112,7 @@ class ImageUploadService {
       img.Image? image = img.decodeImage(bytes);
 
       if (image == null) {
-        return const ResultFailure(
-          ValidationFailure('Gagal decode gambar'),
-        );
+        return const ResultFailure(ValidationFailure('Gagal decode gambar'));
       }
 
       // Resize to target size
@@ -164,13 +160,12 @@ class ImageUploadService {
       final path = '$userId/$fileName';
 
       // Upload with upsert (overwrite if exists)
-      await _supabase.storage.from(_bucketName).upload(
+      await _supabase.storage
+          .from(_bucketName)
+          .upload(
             path,
             imageFile,
-            fileOptions: const FileOptions(
-              cacheControl: '3600',
-              upsert: true,
-            ),
+            fileOptions: const FileOptions(cacheControl: '3600', upsert: true),
           );
 
       // Get public URL
@@ -178,9 +173,7 @@ class ImageUploadService {
 
       return Success(publicUrl);
     } on StorageException catch (e) {
-      return ResultFailure(
-        ServerFailure('Gagal upload gambar: ${e.message}'),
-      );
+      return ResultFailure(ServerFailure('Gagal upload gambar: ${e.message}'));
     } catch (e) {
       return ResultFailure(
         ServerFailure('Gagal upload gambar: ${e.toString()}'),
@@ -198,13 +191,12 @@ class ImageUploadService {
       return const Success(null);
     } on StorageException catch (e) {
       // Not found is not an error
-      if (e.message.contains('not found') || e.message.contains('does not exist')) {
+      if (e.message.contains('not found') ||
+          e.message.contains('does not exist')) {
         return const Success(null);
       }
 
-      return ResultFailure(
-        ServerFailure('Gagal hapus gambar: ${e.message}'),
-      );
+      return ResultFailure(ServerFailure('Gagal hapus gambar: ${e.message}'));
     } catch (e) {
       return ResultFailure(
         ServerFailure('Gagal hapus gambar: ${e.toString()}'),
