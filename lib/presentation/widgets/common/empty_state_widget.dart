@@ -126,7 +126,7 @@ class EmptyStateWidget extends StatelessWidget {
                 label: Text(actionButtonText!),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
+                  foregroundColor: Theme.of(context).colorScheme.onPrimary,
                   padding: EdgeInsets.symmetric(
                     horizontal: AppDimensions.paddingL,
                     vertical: AppDimensions.paddingM,
