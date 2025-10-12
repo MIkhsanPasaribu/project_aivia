@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:project_aivia/core/config/theme_config.dart';
 import 'package:project_aivia/core/config/supabase_config.dart';
 import 'package:project_aivia/core/constants/app_strings.dart';
+import 'package:project_aivia/presentation/providers/theme_provider.dart';
 import 'package:project_aivia/presentation/screens/splash/splash_screen.dart';
 import 'package:project_aivia/presentation/screens/auth/login_screen.dart';
 import 'package:project_aivia/presentation/screens/auth/register_screen.dart';
@@ -30,15 +31,23 @@ void main() async {
   runApp(const ProviderScope(child: MainApp()));
 }
 
-class MainApp extends StatelessWidget {
+class MainApp extends ConsumerWidget {
   const MainApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Watch theme mode dari provider
+    final themeMode = ref.watch(currentThemeModeProvider);
+
     return MaterialApp(
       title: AppStrings.appName,
       debugShowCheckedModeBanner: false,
+
+      // Theme configuration dengan dark mode support
       theme: ThemeConfig.lightTheme,
+      darkTheme: ThemeConfig.darkTheme,
+      themeMode: themeMode,
+
       initialRoute: '/',
       routes: {
         '/': (context) => const SplashScreen(),
