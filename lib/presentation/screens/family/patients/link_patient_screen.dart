@@ -273,19 +273,21 @@ class _LinkPatientScreenState extends ConsumerState<LinkPatientScreen> {
         onPressed: _isLoading ? null : _handleLinkPatient,
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primary,
-          foregroundColor: Colors.white,
+          foregroundColor: Theme.of(context).colorScheme.onPrimary,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppDimensions.radiusM),
           ),
           elevation: 2,
         ),
         child: _isLoading
-            ? const SizedBox(
+            ? SizedBox(
                 height: 24,
                 width: 24,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    Theme.of(context).colorScheme.onPrimary,
+                  ),
                 ),
               )
             : const Text(
