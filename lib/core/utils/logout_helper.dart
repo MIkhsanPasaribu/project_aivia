@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:project_aivia/core/constants/app_colors.dart';
 import 'package:project_aivia/core/constants/app_strings.dart';
 import 'package:project_aivia/presentation/providers/auth_provider.dart';
 
@@ -69,10 +68,10 @@ class LogoutHelper {
 
           // Show success message
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(AppStrings.successLogout),
-              backgroundColor: AppColors.success,
-              duration: Duration(seconds: 2),
+            SnackBar(
+              content: const Text(AppStrings.successLogout),
+              backgroundColor: Theme.of(context).colorScheme.tertiary,
+              duration: const Duration(seconds: 2),
             ),
           );
         },
@@ -81,7 +80,7 @@ class LogoutHelper {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(failure.message),
-              backgroundColor: AppColors.error,
+              backgroundColor: Theme.of(context).colorScheme.error,
               duration: const Duration(seconds: 3),
             ),
           );
@@ -97,7 +96,7 @@ class LogoutHelper {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Gagal logout: ${e.toString()}'),
-          backgroundColor: AppColors.error,
+          backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
     }
@@ -121,8 +120,8 @@ class LogoutHelper {
           ElevatedButton(
             onPressed: () => Navigator.of(context).pop(true),
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.error,
-              foregroundColor: Colors.white,
+              backgroundColor: Theme.of(context).colorScheme.error,
+              foregroundColor: Theme.of(context).colorScheme.onError,
             ),
             child: const Text(AppStrings.yes),
           ),
