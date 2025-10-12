@@ -5,6 +5,7 @@ import 'package:project_aivia/core/constants/app_strings.dart';
 import 'package:project_aivia/core/constants/app_dimensions.dart';
 import 'package:project_aivia/core/utils/logout_helper.dart';
 import 'package:project_aivia/presentation/screens/common/help_screen.dart';
+import 'package:project_aivia/presentation/providers/notification_settings_provider.dart';
 
 /// Settings Screen - Halaman pengaturan aplikasi
 class SettingsScreen extends ConsumerWidget {
@@ -56,8 +57,11 @@ class SettingsScreen extends ConsumerWidget {
             title: 'Notifikasi Aktivitas',
             subtitle: 'Pengingat untuk aktivitas harian',
             trailing: Switch(
-              value: true, // TODO: Connect to notification service
+              value: ref.watch(notificationEnabledProvider),
               onChanged: (value) {
+                ref
+                    .read(notificationEnabledProvider.notifier)
+                    .setEnabled(value);
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(
