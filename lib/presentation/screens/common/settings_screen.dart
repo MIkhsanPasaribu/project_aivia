@@ -6,6 +6,7 @@ import 'package:project_aivia/core/constants/app_dimensions.dart';
 import 'package:project_aivia/core/utils/logout_helper.dart';
 import 'package:project_aivia/presentation/screens/common/help_screen.dart';
 import 'package:project_aivia/presentation/providers/notification_settings_provider.dart';
+import 'package:project_aivia/presentation/providers/theme_provider.dart';
 
 /// Settings Screen - Halaman pengaturan aplikasi
 class SettingsScreen extends ConsumerWidget {
@@ -23,17 +24,7 @@ class SettingsScreen extends ConsumerWidget {
         children: [
           // Section: Tampilan
           _buildSectionHeader(context, 'Tampilan'),
-          _buildSettingTile(
-            context,
-            icon: Icons.palette_outlined,
-            title: 'Tema Aplikasi',
-            subtitle: 'Terang / Gelap (Coming Soon)',
-            trailing: Switch(
-              value: false, // TODO: Connect to theme provider
-              onChanged: null, // Disabled for now
-              activeThumbColor: AppColors.primary,
-            ),
-          ),
+          _buildThemeModeTile(context, ref),
           _buildSettingTile(
             context,
             icon: Icons.text_fields,
@@ -323,6 +314,175 @@ class SettingsScreen extends ConsumerWidget {
           style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
         ),
       ],
+    );
+  }
+
+  /// Build theme mode selector tile dengan visual preview
+  Widget _buildThemeModeTile(BuildContext context, WidgetRef ref) {
+    final themeMode = ref.watch(currentThemeModeProvider);
+    final isDark = themeMode == ThemeMode.dark;
+
+    String getThemeModeLabel() {
+      switch (themeMode) {
+        case ThemeMode.light:
+          return 'Terang';
+        case ThemeMode.dark:
+          return 'Gelap';
+        case ThemeMode.system:
+          return 'Ikuti Sistem';
+      }
+    }
+
+    return _buildSettingTile(
+      context,
+      icon: isDark ? Icons.dark_mode : Icons.light_mode,
+      title: 'Tema Aplikasi',
+      subtitle: getThemeModeLabel(),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: () => _showThemeDialog(context, ref),
+    );
+  }
+
+  /// Dialog untuk memilih theme mode
+  void _showThemeDialog(BuildContext context, WidgetRef ref) {
+    final currentThemeMode = ref.read(currentThemeModeProvider);
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text(
+          'Pilih Tema',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildThemeOption(
+              context,
+              ref,
+              icon: Icons.light_mode,
+              title: 'Tema Terang',
+              description: 'Cocok untuk siang hari',
+              themeMode: ThemeMode.light,
+              isSelected: currentThemeMode == ThemeMode.light,
+            ),
+            const SizedBox(height: AppDimensions.paddingM),
+            _buildThemeOption(
+              context,
+              ref,
+              icon: Icons.dark_mode,
+              title: 'Tema Gelap',
+              description: 'Lebih nyaman di malam hari',
+              themeMode: ThemeMode.dark,
+              isSelected: currentThemeMode == ThemeMode.dark,
+            ),
+            const SizedBox(height: AppDimensions.paddingM),
+            _buildThemeOption(
+              context,
+              ref,
+              icon: Icons.brightness_auto,
+              title: 'Otomatis',
+              description: 'Ikuti pengaturan sistem',
+              themeMode: ThemeMode.system,
+              isSelected: currentThemeMode == ThemeMode.system,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Tutup'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Build theme option card
+  Widget _buildThemeOption(
+    BuildContext context,
+    WidgetRef ref, {
+    required IconData icon,
+    required String title,
+    required String description,
+    required ThemeMode themeMode,
+    required bool isSelected,
+  }) {
+    return InkWell(
+      onTap: () async {
+        await ref.read(themeModeProvider.notifier).setThemeMode(themeMode);
+        if (context.mounted) {
+          Navigator.pop(context);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Tema berhasil diubah ke $title'),
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        }
+      },
+      borderRadius: BorderRadius.circular(AppDimensions.radiusL),
+      child: Container(
+        padding: const EdgeInsets.all(AppDimensions.paddingM),
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: isSelected ? AppColors.primary : AppColors.divider,
+            width: isSelected ? 2 : 1,
+          ),
+          borderRadius: BorderRadius.circular(AppDimensions.radiusL),
+          color: isSelected
+              ? AppColors.primary.withValues(alpha: 0.1)
+              : Colors.transparent,
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(AppDimensions.paddingS),
+              decoration: BoxDecoration(
+                color: isSelected ? AppColors.primary : AppColors.divider,
+                borderRadius: BorderRadius.circular(AppDimensions.radiusM),
+              ),
+              child: Icon(
+                icon,
+                color: isSelected ? Colors.white : AppColors.textSecondary,
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: AppDimensions.paddingM),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
+                      color: isSelected
+                          ? AppColors.primary
+                          : AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    description,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (isSelected)
+              const Icon(
+                Icons.check_circle,
+                color: AppColors.primary,
+                size: 24,
+              ),
+          ],
+        ),
+      ),
     );
   }
 }
