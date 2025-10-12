@@ -1,17 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:project_aivia/core/constants/app_colors.dart';
 import 'package:project_aivia/core/constants/app_strings.dart';
 import 'package:project_aivia/core/constants/app_dimensions.dart';
+import 'package:project_aivia/presentation/providers/auth_provider.dart';
+import 'package:project_aivia/presentation/providers/profile_provider.dart';
+import 'package:project_aivia/data/models/user_profile.dart';
 
 /// Splash Screen - Tampilan awal aplikasi
-class SplashScreen extends StatefulWidget {
+class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
 
   @override
-  State<SplashScreen> createState() => _SplashScreenState();
+  ConsumerState<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen>
+class _SplashScreenState extends ConsumerState<SplashScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
@@ -53,10 +57,49 @@ class _SplashScreenState extends State<SplashScreen>
 
     if (!mounted) return;
 
-    // TODO: Cek status autentikasi
-    // Sementara arahkan ke login
-    // Implementasi akan ditambahkan setelah setup Supabase
-    Navigator.of(context).pushReplacementNamed('/login');
+    // Cek status autentikasi
+    final authState = ref.read(authStateChangesProvider);
+
+    authState.when(
+      data: (user) {
+        if (user != null) {
+          // User sudah login, ambil profile untuk cek role
+          ref.read(currentUserProfileStreamProvider).whenData((profile) {
+            if (!mounted) return;
+
+            if (profile != null) {
+              // Navigate berdasarkan role
+              if (profile.userRole == UserRole.patient) {
+                Navigator.of(context).pushReplacementNamed('/patient/home');
+              } else if (profile.userRole == UserRole.family) {
+                Navigator.of(context).pushReplacementNamed('/family/home');
+              } else {
+                // Default ke login jika role tidak dikenali
+                Navigator.of(context).pushReplacementNamed('/login');
+              }
+            } else {
+              // Profile tidak ditemukan, arahkan ke login
+              Navigator.of(context).pushReplacementNamed('/login');
+            }
+          });
+        } else {
+          // User belum login
+          Navigator.of(context).pushReplacementNamed('/login');
+        }
+      },
+      loading: () {
+        // Masih loading, tunggu sebentar lalu ke login
+        Future.delayed(const Duration(milliseconds: 500), () {
+          if (mounted) {
+            Navigator.of(context).pushReplacementNamed('/login');
+          }
+        });
+      },
+      error: (error, _) {
+        // Error, arahkan ke login
+        Navigator.of(context).pushReplacementNamed('/login');
+      },
+    );
   }
 
   @override
