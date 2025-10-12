@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:project_aivia/core/constants/app_colors.dart';
 
 /// Shimmer loading widget untuk skeleton screen
 class ShimmerLoading extends StatefulWidget {
@@ -42,7 +41,11 @@ class _ShimmerLoadingState extends State<ShimmerLoading>
           blendMode: BlendMode.srcATop,
           shaderCallback: (bounds) {
             return LinearGradient(
-              colors: [AppColors.divider, AppColors.surface, AppColors.divider],
+              colors: [
+                Theme.of(context).dividerColor,
+                Theme.of(context).colorScheme.surface,
+                Theme.of(context).dividerColor,
+              ],
               stops: [
                 _shimmerController.value - 0.3,
                 _shimmerController.value,
@@ -80,7 +83,7 @@ class ActivityCardSkeleton extends StatelessWidget {
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: AppColors.divider,
+                  color: Theme.of(context).dividerColor,
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
@@ -94,7 +97,7 @@ class ActivityCardSkeleton extends StatelessWidget {
                       width: double.infinity,
                       height: 20,
                       decoration: BoxDecoration(
-                        color: AppColors.divider,
+                        color: Theme.of(context).dividerColor,
                         borderRadius: BorderRadius.circular(4),
                       ),
                     ),
@@ -103,7 +106,7 @@ class ActivityCardSkeleton extends StatelessWidget {
                       width: 200,
                       height: 16,
                       decoration: BoxDecoration(
-                        color: AppColors.divider,
+                        color: Theme.of(context).dividerColor,
                         borderRadius: BorderRadius.circular(4),
                       ),
                     ),
@@ -112,7 +115,7 @@ class ActivityCardSkeleton extends StatelessWidget {
                       width: 120,
                       height: 14,
                       decoration: BoxDecoration(
-                        color: AppColors.divider,
+                        color: Theme.of(context).dividerColor,
                         borderRadius: BorderRadius.circular(4),
                       ),
                     ),
@@ -143,8 +146,8 @@ class ProfileHeaderSkeleton extends StatelessWidget {
             Container(
               width: 100,
               height: 100,
-              decoration: const BoxDecoration(
-                color: AppColors.divider,
+              decoration: BoxDecoration(
+                color: Theme.of(context).dividerColor,
                 shape: BoxShape.circle,
               ),
             ),
@@ -154,7 +157,7 @@ class ProfileHeaderSkeleton extends StatelessWidget {
               width: 200,
               height: 24,
               decoration: BoxDecoration(
-                color: AppColors.divider,
+                color: Theme.of(context).dividerColor,
                 borderRadius: BorderRadius.circular(4),
               ),
             ),
@@ -164,7 +167,7 @@ class ProfileHeaderSkeleton extends StatelessWidget {
               width: 150,
               height: 16,
               decoration: BoxDecoration(
-                color: AppColors.divider,
+                color: Theme.of(context).dividerColor,
                 borderRadius: BorderRadius.circular(4),
               ),
             ),
