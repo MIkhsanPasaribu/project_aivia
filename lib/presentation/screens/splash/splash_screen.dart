@@ -110,14 +110,18 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [AppColors.primaryLight, AppColors.background],
+            colors: brightness == Brightness.dark
+                ? [AppColors.primaryDarkerDM, AppColors.backgroundDarkDM]
+                : [AppColors.primaryLight, AppColors.background],
           ),
         ),
         child: Center(
@@ -135,13 +139,17 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                       width: 180,
                       height: 180,
                       decoration: BoxDecoration(
-                        color: AppColors.surface,
+                        color: Theme.of(context).colorScheme.surface,
                         borderRadius: BorderRadius.circular(
                           AppDimensions.radiusXXL,
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.primary.withValues(alpha: 0.3),
+                            color:
+                                (brightness == Brightness.dark
+                                        ? AppColors.primaryDarkDM
+                                        : AppColors.primary)
+                                    .withValues(alpha: 0.3),
                             blurRadius: 20,
                             spreadRadius: 5,
                           ),
