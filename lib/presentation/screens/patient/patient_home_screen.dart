@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:project_aivia/core/constants/app_colors.dart';
 import 'package:project_aivia/core/constants/app_strings.dart';
 import 'package:project_aivia/core/constants/app_dimensions.dart';
 import 'package:project_aivia/presentation/screens/patient/activity/activity_list_screen.dart';
@@ -49,7 +48,7 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
         decoration: BoxDecoration(
           boxShadow: [
             BoxShadow(
-              color: AppColors.shadow,
+              color: Theme.of(context).shadowColor.withValues(alpha: 0.1),
               blurRadius: AppDimensions.elevationM,
               offset: const Offset(0, -2),
             ),
