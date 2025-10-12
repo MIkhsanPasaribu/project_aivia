@@ -54,14 +54,14 @@ class CustomButton extends StatelessWidget {
             backgroundColor: isDisabled
                 ? AppColors.disabled
                 : AppColors.primary,
-            foregroundColor: Colors.white,
+            foregroundColor: Theme.of(context).colorScheme.onPrimary,
             disabledBackgroundColor: AppColors.disabled,
             elevation: isDisabled ? 0 : 2,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(AppDimensions.radiusM),
             ),
           ),
-          child: _buildButtonChild(),
+          child: _buildButtonChild(context),
         );
 
       case ButtonVariant.secondary:
@@ -78,7 +78,7 @@ class CustomButton extends StatelessWidget {
               borderRadius: BorderRadius.circular(AppDimensions.radiusM),
             ),
           ),
-          child: _buildButtonChild(),
+          child: _buildButtonChild(context),
         );
 
       case ButtonVariant.outline:
@@ -96,19 +96,21 @@ class CustomButton extends StatelessWidget {
               borderRadius: BorderRadius.circular(AppDimensions.radiusM),
             ),
           ),
-          child: _buildButtonChild(),
+          child: _buildButtonChild(context),
         );
     }
   }
 
-  Widget _buildButtonChild() {
+  Widget _buildButtonChild(BuildContext context) {
     if (isLoading) {
-      return const SizedBox(
+      return SizedBox(
         height: 20,
         width: 20,
         child: CircularProgressIndicator(
           strokeWidth: 2,
-          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+          valueColor: AlwaysStoppedAnimation<Color>(
+            Theme.of(context).colorScheme.onPrimary,
+          ),
         ),
       );
     }
