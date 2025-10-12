@@ -105,21 +105,27 @@ class _CustomTextFieldState extends State<CustomTextField> {
                     widget.prefixIcon,
                     color: widget.enabled
                         ? AppColors.primary
-                        : AppColors.disabled,
+                        : Theme.of(context).disabledColor,
                   )
                 : null,
             suffixIcon: _buildSuffixIcon(),
             filled: true,
             fillColor: widget.enabled
-                ? AppColors.surface
-                : AppColors.surfaceVariant,
+                ? Theme.of(context).colorScheme.surface
+                : Theme.of(context).colorScheme.surfaceContainerHighest,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppDimensions.radiusM),
-              borderSide: const BorderSide(color: AppColors.divider, width: 1),
+              borderSide: BorderSide(
+                color: Theme.of(context).dividerColor,
+                width: 1,
+              ),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppDimensions.radiusM),
-              borderSide: const BorderSide(color: AppColors.divider, width: 1),
+              borderSide: BorderSide(
+                color: Theme.of(context).dividerColor,
+                width: 1,
+              ),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppDimensions.radiusM),
@@ -135,7 +141,10 @@ class _CustomTextFieldState extends State<CustomTextField> {
             ),
             disabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppDimensions.radiusM),
-              borderSide: const BorderSide(color: AppColors.disabled, width: 1),
+              borderSide: BorderSide(
+                color: Theme.of(context).disabledColor,
+                width: 1,
+              ),
             ),
             contentPadding: EdgeInsets.symmetric(
               horizontal: AppDimensions.paddingM,
@@ -166,7 +175,9 @@ class _CustomTextFieldState extends State<CustomTextField> {
       return IconButton(
         icon: Icon(
           widget.suffixIcon,
-          color: widget.enabled ? AppColors.primary : AppColors.disabled,
+          color: widget.enabled
+              ? AppColors.primary
+              : Theme.of(context).disabledColor,
         ),
         onPressed: widget.enabled ? widget.onSuffixIconTap : null,
       );
