@@ -15,7 +15,7 @@ class SettingsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('Pengaturan'),
         backgroundColor: AppColors.primary,
@@ -153,7 +153,7 @@ class SettingsScreen extends ConsumerWidget {
               label: const Text(AppStrings.logout),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.error,
-                foregroundColor: Colors.white,
+                foregroundColor: Theme.of(context).colorScheme.onError,
                 minimumSize: const Size.fromHeight(AppDimensions.buttonHeightL),
               ),
             ),
@@ -195,7 +195,9 @@ class SettingsScreen extends ConsumerWidget {
       leading: Container(
         padding: const EdgeInsets.all(AppDimensions.paddingS),
         decoration: BoxDecoration(
-          color: AppColors.primaryLight.withValues(alpha: 0.2),
+          color: Theme.of(
+            context,
+          ).colorScheme.primaryContainer.withValues(alpha: 0.5),
           borderRadius: BorderRadius.circular(AppDimensions.radiusM),
         ),
         child: Icon(icon, color: AppColors.primary),
@@ -298,7 +300,11 @@ class SettingsScreen extends ConsumerWidget {
           color: AppColors.primary,
           borderRadius: BorderRadius.circular(AppDimensions.radiusM),
         ),
-        child: const Icon(Icons.favorite, color: Colors.white, size: 32),
+        child: Icon(
+          Icons.favorite,
+          color: Theme.of(context).colorScheme.onPrimary,
+          size: 32,
+        ),
       ),
       children: const [
         SizedBox(height: AppDimensions.paddingM),
@@ -444,7 +450,9 @@ class SettingsScreen extends ConsumerWidget {
               ),
               child: Icon(
                 icon,
-                color: isSelected ? Colors.white : AppColors.textSecondary,
+                color: isSelected
+                    ? Theme.of(context).colorScheme.onPrimary
+                    : AppColors.textSecondary,
                 size: 24,
               ),
             ),
