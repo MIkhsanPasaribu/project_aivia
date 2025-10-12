@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_dimensions.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../data/models/patient_family_link.dart';
@@ -25,14 +24,14 @@ class FamilyDashboardScreen extends ConsumerWidget {
     final linkedPatientsAsync = ref.watch(linkedPatientsStreamProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
         title: const Text(
           AppStrings.familyDashboard,
           style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
         ),
-        backgroundColor: AppColors.primary,
-        foregroundColor: AppColors.textPrimary,
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        foregroundColor: Theme.of(context).colorScheme.onPrimary,
         elevation: 0,
       ),
       body: linkedPatientsAsync.when(
@@ -56,14 +55,14 @@ class FamilyDashboardScreen extends ConsumerWidget {
           // Jika berhasil link patient, show snackbar
           if (result == true && context.mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('✅ Pasien berhasil ditambahkan!'),
-                backgroundColor: AppColors.success,
+              SnackBar(
+                content: const Text('✅ Pasien berhasil ditambahkan!'),
+                backgroundColor: Theme.of(context).colorScheme.tertiary,
               ),
             );
           }
         },
-        backgroundColor: AppColors.primary,
+        backgroundColor: Theme.of(context).colorScheme.primary,
         icon: const Icon(Icons.person_add),
         label: const Text('Tambah Pasien'),
       ),
@@ -77,14 +76,20 @@ class FamilyDashboardScreen extends ConsumerWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.group_add, size: 120, color: AppColors.textTertiary),
+            Icon(
+              Icons.group_add,
+              size: 120,
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.3),
+            ),
             const SizedBox(height: AppDimensions.paddingL),
             Text(
               'Belum Ada Pasien',
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
               textAlign: TextAlign.center,
             ),
@@ -94,7 +99,9 @@ class FamilyDashboardScreen extends ConsumerWidget {
               'Tekan tombol "Tambah Pasien" untuk menghubungkan dengan pasien.',
               style: TextStyle(
                 fontSize: 16,
-                color: AppColors.textSecondary,
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.6),
                 height: 1.5,
               ),
               textAlign: TextAlign.center,
@@ -110,8 +117,8 @@ class FamilyDashboardScreen extends ConsumerWidget {
                 );
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: AppColors.textPrimary,
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                foregroundColor: Theme.of(context).colorScheme.onPrimary,
                 padding: const EdgeInsets.symmetric(
                   horizontal: AppDimensions.paddingXL,
                   vertical: AppDimensions.paddingM,
@@ -139,20 +146,29 @@ class FamilyDashboardScreen extends ConsumerWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.error_outline, size: 80, color: AppColors.error),
+            Icon(
+              Icons.error_outline,
+              size: 80,
+              color: Theme.of(context).colorScheme.error,
+            ),
             const SizedBox(height: AppDimensions.paddingL),
             Text(
               'Terjadi Kesalahan',
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
             const SizedBox(height: AppDimensions.paddingM),
             Text(
               error,
-              style: TextStyle(fontSize: 16, color: AppColors.textSecondary),
+              style: TextStyle(
+                fontSize: 16,
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.6),
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: AppDimensions.paddingL),
@@ -162,8 +178,8 @@ class FamilyDashboardScreen extends ConsumerWidget {
                 // ref.invalidate(linkedPatientsStreamProvider);
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: AppColors.textPrimary,
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                foregroundColor: Theme.of(context).colorScheme.onPrimary,
               ),
               icon: const Icon(Icons.refresh),
               label: const Text('Coba Lagi'),
@@ -239,7 +255,9 @@ class FamilyDashboardScreen extends ConsumerWidget {
                   // Avatar
                   CircleAvatar(
                     radius: 32,
-                    backgroundColor: AppColors.primaryLight,
+                    backgroundColor: Theme.of(
+                      context,
+                    ).colorScheme.primaryContainer,
                     backgroundImage: patient.avatarUrl != null
                         ? NetworkImage(patient.avatarUrl!)
                         : null,
@@ -248,10 +266,12 @@ class FamilyDashboardScreen extends ConsumerWidget {
                             patient.fullName.isNotEmpty
                                 ? patient.fullName[0].toUpperCase()
                                 : '?',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 24,
                               fontWeight: FontWeight.w600,
-                              color: AppColors.textPrimary,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onPrimaryContainer,
                             ),
                           )
                         : null,
@@ -265,10 +285,10 @@ class FamilyDashboardScreen extends ConsumerWidget {
                       children: [
                         Text(
                           patient.fullName,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w600,
-                            color: AppColors.textPrimary,
+                            color: Theme.of(context).colorScheme.onSurface,
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -277,14 +297,18 @@ class FamilyDashboardScreen extends ConsumerWidget {
                             Icon(
                               Icons.family_restroom,
                               size: 16,
-                              color: AppColors.textSecondary,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withValues(alpha: 0.6),
                             ),
                             const SizedBox(width: 4),
                             Text(
                               RelationshipTypes.getLabel(link.relationshipType),
                               style: TextStyle(
                                 fontSize: 14,
-                                color: AppColors.textSecondary,
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurface.withValues(alpha: 0.6),
                               ),
                             ),
                           ],
@@ -301,7 +325,7 @@ class FamilyDashboardScreen extends ConsumerWidget {
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: AppColors.accent,
+                        color: Theme.of(context).colorScheme.tertiaryContainer,
                         borderRadius: BorderRadius.circular(
                           AppDimensions.radiusM,
                         ),
@@ -312,7 +336,9 @@ class FamilyDashboardScreen extends ConsumerWidget {
                           Icon(
                             Icons.star,
                             size: 14,
-                            color: AppColors.textPrimary,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onTertiaryContainer,
                           ),
                           const SizedBox(width: 4),
                           Text(
@@ -320,7 +346,9 @@ class FamilyDashboardScreen extends ConsumerWidget {
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
-                              color: AppColors.textPrimary,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onTertiaryContainer,
                             ),
                           ),
                         ],
@@ -330,7 +358,7 @@ class FamilyDashboardScreen extends ConsumerWidget {
               ),
 
               const SizedBox(height: AppDimensions.paddingM),
-              Divider(color: AppColors.divider, height: 1),
+              Divider(color: Theme.of(context).dividerColor, height: 1),
               const SizedBox(height: AppDimensions.paddingM),
 
               // Quick Stats
@@ -339,12 +367,13 @@ class FamilyDashboardScreen extends ConsumerWidget {
                   // Activities Count
                   Expanded(
                     child: _buildStatItemWithWidget(
+                      context: context,
                       icon: Icons.event_note,
                       label: 'Aktivitas Hari Ini',
                       valueWidget: _ActivityCountWidget(
                         patientId: link.patientId,
                       ),
-                      color: AppColors.primary,
+                      color: Theme.of(context).colorScheme.primary,
                     ),
                   ),
                   const SizedBox(width: AppDimensions.paddingS),
@@ -352,12 +381,13 @@ class FamilyDashboardScreen extends ConsumerWidget {
                   // Last Location Update
                   Expanded(
                     child: _buildStatItemWithWidget(
+                      context: context,
                       icon: Icons.location_on,
                       label: 'Lokasi Terakhir',
                       valueWidget: _LastLocationWidget(
                         patientId: link.patientId,
                       ),
-                      color: AppColors.secondary,
+                      color: Theme.of(context).colorScheme.secondary,
                     ),
                   ),
                 ],
@@ -383,8 +413,10 @@ class FamilyDashboardScreen extends ConsumerWidget {
                             }
                           : null,
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.primary,
-                        side: const BorderSide(color: AppColors.primary),
+                        foregroundColor: Theme.of(context).colorScheme.primary,
+                        side: BorderSide(
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
                       ),
                       icon: const Icon(Icons.list, size: 18),
                       label: const Text(
@@ -411,8 +443,12 @@ class FamilyDashboardScreen extends ConsumerWidget {
                             }
                           : null,
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.secondary,
-                        side: const BorderSide(color: AppColors.secondary),
+                        foregroundColor: Theme.of(
+                          context,
+                        ).colorScheme.secondary,
+                        side: BorderSide(
+                          color: Theme.of(context).colorScheme.secondary,
+                        ),
                       ),
                       icon: const Icon(Icons.map, size: 18),
                       label: const Text('Peta', style: TextStyle(fontSize: 14)),
@@ -429,6 +465,7 @@ class FamilyDashboardScreen extends ConsumerWidget {
 
   /// Variant of _buildStatItem that accepts a widget for the value
   Widget _buildStatItemWithWidget({
+    required BuildContext context,
     required IconData icon,
     required String label,
     required Widget valueWidget,
@@ -453,7 +490,9 @@ class FamilyDashboardScreen extends ConsumerWidget {
                   label,
                   style: TextStyle(
                     fontSize: 12,
-                    color: AppColors.textSecondary,
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -481,10 +520,10 @@ class _ActivityCountWidget extends ConsumerWidget {
       data: (activities) {
         return Text(
           activities.length.toString(),
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         );
       },
@@ -493,12 +532,12 @@ class _ActivityCountWidget extends ConsumerWidget {
         height: 20,
         child: CircularProgressIndicator(strokeWidth: 2),
       ),
-      error: (error, stack) => const Text(
+      error: (error, stack) => Text(
         '-',
         style: TextStyle(
           fontSize: 24,
           fontWeight: FontWeight.bold,
-          color: AppColors.textSecondary,
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
         ),
       ),
     );
@@ -521,10 +560,10 @@ class _LastLocationWidget extends ConsumerWidget {
       data: (location) {
         return Text(
           location,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w600,
-            color: AppColors.textPrimary,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
@@ -535,12 +574,12 @@ class _LastLocationWidget extends ConsumerWidget {
         height: 16,
         child: CircularProgressIndicator(strokeWidth: 2),
       ),
-      error: (error, stack) => const Text(
+      error: (error, stack) => Text(
         'Unknown',
         style: TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.w600,
-          color: AppColors.textSecondary,
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
         ),
       ),
     );
