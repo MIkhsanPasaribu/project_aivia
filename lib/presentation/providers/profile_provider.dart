@@ -4,6 +4,7 @@ import 'package:project_aivia/data/models/user_profile.dart';
 import 'package:project_aivia/data/repositories/profile_repository.dart';
 import 'package:project_aivia/core/utils/result.dart';
 import 'package:project_aivia/core/errors/failures.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Provider untuk ProfileRepository instance
 final profileRepositoryProvider = Provider<ProfileRepository>((ref) {
@@ -16,6 +17,12 @@ final currentUserProfileStreamProvider = StreamProvider<UserProfile?>((
   ref,
 ) async* {
   final profileRepository = ref.watch(profileRepositoryProvider);
+  final user = Supabase.instance.client.auth.currentUser;
+
+  if (user == null) {
+    yield null;
+    return;
+  }
 
   // Get initial profile
   final result = await profileRepository.getCurrentUserProfile();
@@ -23,8 +30,17 @@ final currentUserProfileStreamProvider = StreamProvider<UserProfile?>((
   if (result is Success<UserProfile>) {
     yield result.data;
 
-    // TODO: Implement Realtime subscription untuk auto-update
-    // Untuk sekarang, yield initial data saja
+    // Realtime subscription untuk auto-update
+    final stream = Supabase.instance.client
+        .from('profiles')
+        .stream(primaryKey: ['id'])
+        .eq('id', user.id)
+        .map((data) {
+          if (data.isEmpty) return null;
+          return UserProfile.fromJson(data.first);
+        });
+
+    yield* stream;
   } else {
     yield null;
   }
