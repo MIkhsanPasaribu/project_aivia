@@ -19,7 +19,7 @@ class ProfileScreen extends ConsumerWidget {
     final currentUserAsync = ref.watch(currentUserProfileProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text(AppStrings.profile),
         automaticallyImplyLeading: false,
@@ -51,15 +51,17 @@ class ProfileScreen extends ConsumerWidget {
                         width: 100,
                         height: 100,
                         decoration: BoxDecoration(
-                          color: AppColors.surface,
+                          color: Theme.of(context).colorScheme.surface,
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: AppColors.surface,
+                            color: Theme.of(context).colorScheme.surface,
                             width: 4,
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: AppColors.shadow,
+                              color: Theme.of(
+                                context,
+                              ).shadowColor.withValues(alpha: 0.3),
                               blurRadius: AppDimensions.elevationM,
                               spreadRadius: 2,
                             ),
@@ -217,7 +219,7 @@ class ProfileScreen extends ConsumerWidget {
                     ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.error,
-                      foregroundColor: Colors.white,
+                      foregroundColor: Theme.of(context).colorScheme.onError,
                       minimumSize: const Size.fromHeight(
                         AppDimensions.buttonHeightL,
                       ),
