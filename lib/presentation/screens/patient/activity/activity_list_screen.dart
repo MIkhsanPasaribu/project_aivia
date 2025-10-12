@@ -34,7 +34,7 @@ class ActivityListScreen extends ConsumerWidget {
           data: (activities) =>
               _buildActivityList(context, ref, user.id, activities),
           loading: () => Scaffold(
-            backgroundColor: AppColors.background,
+            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
             appBar: AppBar(
               title: const Text(AppStrings.activityTitle),
               automaticallyImplyLeading: false,
@@ -89,7 +89,7 @@ class ActivityListScreen extends ConsumerWidget {
   ) {
     if (activities.isEmpty) {
       return Scaffold(
-        backgroundColor: AppColors.background,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: AppBar(
           title: const Text(AppStrings.activityTitle),
           automaticallyImplyLeading: false,
@@ -113,7 +113,7 @@ class ActivityListScreen extends ConsumerWidget {
         .toList();
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text(AppStrings.activityTitle),
         automaticallyImplyLeading: false,
@@ -267,7 +267,11 @@ class ActivityListScreen extends ConsumerWidget {
           color: AppColors.error,
           borderRadius: BorderRadius.circular(AppDimensions.cardRadius),
         ),
-        child: const Icon(Icons.delete, color: Colors.white, size: 32),
+        child: Icon(
+          Icons.delete,
+          color: Theme.of(context).colorScheme.onError,
+          size: 32,
+        ),
       ),
       confirmDismiss: (direction) async {
         return await showDialog<bool>(
@@ -286,7 +290,7 @@ class ActivityListScreen extends ConsumerWidget {
                 onPressed: () => Navigator.of(context).pop(true),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.error,
-                  foregroundColor: Colors.white,
+                  foregroundColor: Theme.of(context).colorScheme.onError,
                 ),
                 child: const Text('Hapus'),
               ),
@@ -437,9 +441,9 @@ class ActivityListScreen extends ConsumerWidget {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
-        decoration: const BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.only(
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: const BorderRadius.only(
             topLeft: Radius.circular(AppDimensions.radiusXL),
             topRight: Radius.circular(AppDimensions.radiusXL),
           ),
@@ -538,7 +542,9 @@ class ActivityListScreen extends ConsumerWidget {
                               AppDimensions.buttonHeightL,
                             ),
                             backgroundColor: AppColors.success,
-                            foregroundColor: Colors.white,
+                            foregroundColor: Theme.of(
+                              context,
+                            ).colorScheme.onPrimary,
                           ),
                         )
                       : ElevatedButton.icon(
@@ -579,7 +585,9 @@ class ActivityListScreen extends ConsumerWidget {
                               AppDimensions.buttonHeightL,
                             ),
                             backgroundColor: AppColors.success,
-                            foregroundColor: Colors.white,
+                            foregroundColor: Theme.of(
+                              context,
+                            ).colorScheme.onPrimary,
                           ),
                         ),
                 ),
