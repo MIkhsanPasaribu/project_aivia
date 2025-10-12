@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
 
 /// Help Screen untuk panduan penggunaan aplikasi
@@ -15,27 +14,31 @@ class HelpScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: colorScheme.surface,
       appBar: AppBar(
         title: const Text(
           'Bantuan & Panduan',
           style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
         ),
-        backgroundColor: AppColors.primary,
-        foregroundColor: AppColors.textPrimary,
+        backgroundColor: colorScheme.primary,
+        foregroundColor: colorScheme.onPrimary,
         elevation: 0,
       ),
       body: ListView(
         padding: const EdgeInsets.all(AppDimensions.paddingM),
         children: [
           // Header Card
-          _buildHeaderCard(),
+          _buildHeaderCard(context),
           const SizedBox(height: AppDimensions.paddingM),
 
           // Cara Menggunakan
-          _buildSectionTitle('📖 Cara Menggunakan'),
+          _buildSectionTitle(context, '📖 Cara Menggunakan'),
           _buildGuideCard(
+            context: context,
             title: 'Untuk Pasien',
             items: [
               'Lihat daftar aktivitas harian Anda di Beranda',
@@ -44,10 +47,11 @@ class HelpScreen extends StatelessWidget {
               'Periksa profil Anda untuk informasi pribadi',
             ],
             icon: Icons.person,
-            color: AppColors.primary,
+            color: colorScheme.primary,
           ),
           const SizedBox(height: AppDimensions.paddingS),
           _buildGuideCard(
+            context: context,
             title: 'Untuk Keluarga',
             items: [
               'Monitor aktivitas pasien melalui Dashboard',
@@ -57,13 +61,13 @@ class HelpScreen extends StatelessWidget {
               'Terima notifikasi jika pasien membutuhkan bantuan',
             ],
             icon: Icons.family_restroom,
-            color: AppColors.secondary,
+            color: colorScheme.secondary,
           ),
 
           const SizedBox(height: AppDimensions.paddingL),
 
           // FAQ Section
-          _buildSectionTitle('❓ Pertanyaan Umum (FAQ)'),
+          _buildSectionTitle(context, '❓ Pertanyaan Umum (FAQ)'),
           _buildFAQItem(
             context: context,
             question: 'Bagaimana cara menghubungkan pasien dengan keluarga?',
@@ -102,14 +106,14 @@ class HelpScreen extends StatelessWidget {
           const SizedBox(height: AppDimensions.paddingL),
 
           // About Section
-          _buildSectionTitle('ℹ️ Tentang Aplikasi'),
-          _buildAboutCard(),
+          _buildSectionTitle(context, 'ℹ️ Tentang Aplikasi'),
+          _buildAboutCard(context),
 
           const SizedBox(height: AppDimensions.paddingL),
 
           // Contact Support
-          _buildSectionTitle('📞 Hubungi Kami'),
-          _buildContactCard(),
+          _buildSectionTitle(context, '📞 Hubungi Kami'),
+          _buildContactCard(context),
 
           const SizedBox(height: AppDimensions.paddingXL),
         ],
@@ -117,7 +121,9 @@ class HelpScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildHeaderCard() {
+  Widget _buildHeaderCard(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(
@@ -128,8 +134,8 @@ class HelpScreen extends StatelessWidget {
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              AppColors.primary.withValues(alpha: 0.1),
-              AppColors.secondary.withValues(alpha: 0.1),
+              colorScheme.primary.withValues(alpha: 0.1),
+              colorScheme.secondary.withValues(alpha: 0.1),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -138,21 +144,24 @@ class HelpScreen extends StatelessWidget {
         ),
         child: Column(
           children: [
-            const Icon(Icons.help_outline, size: 64, color: AppColors.primary),
+            Icon(Icons.help_outline, size: 64, color: colorScheme.primary),
             const SizedBox(height: AppDimensions.paddingM),
-            const Text(
+            Text(
               'Selamat Datang di Pusat Bantuan',
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
+                color: colorScheme.onSurface,
               ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: AppDimensions.paddingS),
             Text(
               'Temukan panduan lengkap dan jawaban atas pertanyaan Anda',
-              style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
+              style: TextStyle(
+                fontSize: 14,
+                color: colorScheme.onSurface.withValues(alpha: 0.6),
+              ),
               textAlign: TextAlign.center,
             ),
           ],
@@ -161,7 +170,7 @@ class HelpScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSectionTitle(String title) {
+  Widget _buildSectionTitle(BuildContext context, String title) {
     return Padding(
       padding: const EdgeInsets.only(
         left: AppDimensions.paddingS,
@@ -169,21 +178,24 @@ class HelpScreen extends StatelessWidget {
       ),
       child: Text(
         title,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 18,
           fontWeight: FontWeight.bold,
-          color: AppColors.textPrimary,
+          color: Theme.of(context).colorScheme.onSurface,
         ),
       ),
     );
   }
 
   Widget _buildGuideCard({
+    required BuildContext context,
     required String title,
     required List<String> items,
     required IconData icon,
     required Color color,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    
     return Card(
       elevation: 1,
       shape: RoundedRectangleBorder(
@@ -207,10 +219,10 @@ class HelpScreen extends StatelessWidget {
                 const SizedBox(width: AppDimensions.paddingM),
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
+                    color: colorScheme.onSurface,
                   ),
                 ),
               ],
@@ -233,9 +245,9 @@ class HelpScreen extends StatelessWidget {
                     Expanded(
                       child: Text(
                         entry.value,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 14,
-                          color: AppColors.textSecondary,
+                          color: colorScheme.onSurface.withValues(alpha: 0.6),
                           height: 1.5,
                         ),
                       ),
@@ -255,6 +267,8 @@ class HelpScreen extends StatelessWidget {
     required String answer,
     required BuildContext context,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    
     return Card(
       elevation: 1,
       margin: const EdgeInsets.only(bottom: AppDimensions.paddingS),
@@ -275,18 +289,18 @@ class HelpScreen extends StatelessWidget {
           ),
           title: Text(
             question,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
+              color: colorScheme.onSurface,
             ),
           ),
           children: [
             Text(
               answer,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
-                color: AppColors.textSecondary,
+                color: colorScheme.onSurface.withValues(alpha: 0.6),
                 height: 1.6,
               ),
             ),
@@ -296,7 +310,9 @@ class HelpScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildAboutCard() {
+  Widget _buildAboutCard(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    
     return Card(
       elevation: 1,
       shape: RoundedRectangleBorder(
@@ -307,12 +323,12 @@ class HelpScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'AIVIA - Alzheimer Assistant',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
+                color: colorScheme.onSurface,
               ),
             ),
             const SizedBox(height: AppDimensions.paddingM),
@@ -322,23 +338,25 @@ class HelpScreen extends StatelessWidget {
               'pelacakan lokasi, pengingat aktivitas, dan sistem darurat.',
               style: TextStyle(
                 fontSize: 14,
-                color: AppColors.textSecondary,
+                color: colorScheme.onSurface.withValues(alpha: 0.6),
                 height: 1.6,
               ),
             ),
             const SizedBox(height: AppDimensions.paddingM),
-            Divider(color: AppColors.divider),
+            Divider(color: Theme.of(context).dividerColor),
             const SizedBox(height: AppDimensions.paddingM),
-            _buildInfoRow('Versi', 'v1.0.0 (MVP)'),
-            _buildInfoRow('Platform', 'Android'),
-            _buildInfoRow('Teknologi', 'Flutter + Supabase'),
+            _buildInfoRow(context, 'Versi', 'v1.0.0 (MVP)'),
+            _buildInfoRow(context, 'Platform', 'Android'),
+            _buildInfoRow(context, 'Teknologi', 'Flutter + Supabase'),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildInfoRow(String label, String value) {
+  Widget _buildInfoRow(BuildContext context, String label, String value) {
+    final colorScheme = Theme.of(context).colorScheme;
+    
     return Padding(
       padding: const EdgeInsets.only(bottom: AppDimensions.paddingS),
       child: Row(
@@ -346,17 +364,17 @@ class HelpScreen extends StatelessWidget {
         children: [
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 14,
-              color: AppColors.textSecondary,
+              color: colorScheme.onSurface.withValues(alpha: 0.6),
             ),
           ),
           Text(
             value,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
+              color: colorScheme.onSurface,
             ),
           ),
         ],
@@ -364,7 +382,9 @@ class HelpScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildContactCard() {
+  Widget _buildContactCard(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    
     return Card(
       elevation: 1,
       shape: RoundedRectangleBorder(
@@ -375,24 +395,27 @@ class HelpScreen extends StatelessWidget {
         child: Column(
           children: [
             _buildContactItem(
+              context: context,
               icon: Icons.email,
               label: 'Email Support',
               value: 'support@aivia.app',
-              color: AppColors.primary,
+              color: colorScheme.primary,
             ),
             const SizedBox(height: AppDimensions.paddingM),
             _buildContactItem(
+              context: context,
               icon: Icons.phone,
               label: 'Telepon',
               value: '+62 812-3456-7890',
-              color: AppColors.secondary,
+              color: colorScheme.secondary,
             ),
             const SizedBox(height: AppDimensions.paddingM),
             _buildContactItem(
+              context: context,
               icon: Icons.language,
               label: 'Website',
               value: 'www.aivia.app',
-              color: AppColors.accent,
+              color: colorScheme.tertiary,
             ),
           ],
         ),
@@ -401,11 +424,14 @@ class HelpScreen extends StatelessWidget {
   }
 
   Widget _buildContactItem({
+    required BuildContext context,
     required IconData icon,
     required String label,
     required String value,
     required Color color,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    
     return Row(
       children: [
         Container(
@@ -423,17 +449,17 @@ class HelpScreen extends StatelessWidget {
             children: [
               Text(
                 label,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 12,
-                  color: AppColors.textSecondary,
+                  color: colorScheme.onSurface.withValues(alpha: 0.6),
                 ),
               ),
               Text(
                 value,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
+                  color: colorScheme.onSurface,
                 ),
               ),
             ],
