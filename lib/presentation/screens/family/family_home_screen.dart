@@ -43,7 +43,7 @@ class _FamilyHomeScreenState extends ConsumerState<FamilyHomeScreen> {
         decoration: BoxDecoration(
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
+              color: Theme.of(context).shadowColor.withValues(alpha: 0.1),
               blurRadius: 8,
               offset: const Offset(0, -2),
             ),
@@ -57,7 +57,7 @@ class _FamilyHomeScreenState extends ConsumerState<FamilyHomeScreen> {
             });
           },
           type: BottomNavigationBarType.fixed,
-          backgroundColor: Colors.white,
+          backgroundColor: Theme.of(context).colorScheme.surface,
           selectedItemColor: AppColors.primary,
           unselectedItemColor: AppColors.textTertiary,
           selectedFontSize: 12,
@@ -103,7 +103,7 @@ class FamilyLocationTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('Lokasi Pasien'),
         automaticallyImplyLeading: false,
@@ -143,7 +143,7 @@ class FamilyActivitiesTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('Kelola Aktivitas'),
         automaticallyImplyLeading: false,
@@ -187,7 +187,7 @@ class FamilyKnownPersonsTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('Orang Dikenal'),
         automaticallyImplyLeading: false,
