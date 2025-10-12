@@ -93,7 +93,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(AppDimensions.paddingL),
@@ -110,13 +110,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     width: 120,
                     height: 120,
                     decoration: BoxDecoration(
-                      color: AppColors.surface,
+                      color: Theme.of(context).colorScheme.surface,
                       borderRadius: BorderRadius.circular(
                         AppDimensions.radiusXL,
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: AppColors.shadow,
+                          color: Theme.of(
+                            context,
+                          ).shadowColor.withValues(alpha: 0.1),
                           blurRadius: AppDimensions.elevationM,
                           spreadRadius: 1,
                         ),
