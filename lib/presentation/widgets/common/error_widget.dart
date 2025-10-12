@@ -107,7 +107,7 @@ class CustomErrorWidget extends StatelessWidget {
                 label: Text(retryButtonText ?? 'Coba Lagi'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
+                  foregroundColor: Theme.of(context).colorScheme.onPrimary,
                   padding: EdgeInsets.symmetric(
                     horizontal: AppDimensions.paddingL,
                     vertical: AppDimensions.paddingM,
