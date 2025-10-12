@@ -36,7 +36,7 @@ class LoadingIndicator extends StatelessWidget {
 
     if (withOverlay) {
       return Container(
-        color: Colors.black54,
+        color: Theme.of(context).shadowColor.withValues(alpha: 0.5),
         child: Center(child: loadingWidget),
       );
     }
@@ -90,7 +90,7 @@ class LoadingIndicator extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: AppColors.surface,
+              color: Theme.of(context).colorScheme.surface,
               borderRadius: BorderRadius.circular(12),
             ),
             child: LoadingIndicator(message: message),
