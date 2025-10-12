@@ -8,6 +8,7 @@ import '../../../providers/patient_family_provider.dart';
 import '../../../providers/activity_provider.dart';
 import '../../../providers/location_provider.dart';
 import '../patients/link_patient_screen.dart';
+import '../patients/patient_detail_screen.dart';
 
 /// Dashboard utama untuk Family Member
 ///
@@ -101,10 +102,10 @@ class FamilyDashboardScreen extends ConsumerWidget {
             const SizedBox(height: AppDimensions.paddingXL),
             ElevatedButton.icon(
               onPressed: () {
-                // TODO: Navigate to Link Patient Screen
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Fitur Link Patient akan segera tersedia'),
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const LinkPatientScreen(),
                   ),
                 );
               },
@@ -219,10 +220,10 @@ class FamilyDashboardScreen extends ConsumerWidget {
       ),
       child: InkWell(
         onTap: () {
-          // TODO: Navigate to Patient Detail Screen
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Detail ${patient.fullName} akan segera tersedia'),
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => PatientDetailScreen(patient: patient),
             ),
           );
         },
@@ -372,12 +373,11 @@ class FamilyDashboardScreen extends ConsumerWidget {
                     child: OutlinedButton.icon(
                       onPressed: link.canEditActivities
                           ? () {
-                              // TODO: Navigate to activities
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                    'Fitur aktivitas akan segera tersedia',
-                                  ),
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      PatientDetailScreen(patient: patient),
                                 ),
                               );
                             }
