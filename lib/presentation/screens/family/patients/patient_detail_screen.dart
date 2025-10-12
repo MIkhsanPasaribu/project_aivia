@@ -25,7 +25,7 @@ class PatientDetailScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: CustomScrollView(
         slivers: [
           // App Bar dengan gradient
@@ -71,8 +71,8 @@ class PatientDetailScreen extends ConsumerWidget {
       flexibleSpace: FlexibleSpaceBar(
         title: Text(
           'Detail Pasien',
-          style: const TextStyle(
-            color: Colors.white,
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.onPrimary,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -94,11 +94,11 @@ class PatientDetailScreen extends ConsumerWidget {
       margin: EdgeInsets.all(AppDimensions.paddingM),
       padding: EdgeInsets.all(AppDimensions.paddingL),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(AppDimensions.radiusL),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: Theme.of(context).shadowColor.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -109,7 +109,7 @@ class PatientDetailScreen extends ConsumerWidget {
           // Avatar
           CircleAvatar(
             radius: 50,
-            backgroundColor: AppColors.primaryLight,
+            backgroundColor: Theme.of(context).colorScheme.primaryContainer,
             backgroundImage: patient.avatarUrl != null
                 ? NetworkImage(patient.avatarUrl!)
                 : null,
@@ -266,11 +266,11 @@ class PatientDetailScreen extends ConsumerWidget {
     return Container(
       padding: EdgeInsets.all(AppDimensions.paddingM),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(AppDimensions.radiusM),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: Theme.of(context).shadowColor.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -309,11 +309,11 @@ class PatientDetailScreen extends ConsumerWidget {
       margin: EdgeInsets.symmetric(horizontal: AppDimensions.paddingM),
       padding: EdgeInsets.all(AppDimensions.paddingM),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(AppDimensions.radiusL),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: Theme.of(context).shadowColor.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -441,11 +441,11 @@ class PatientDetailScreen extends ConsumerWidget {
       margin: EdgeInsets.symmetric(horizontal: AppDimensions.paddingM),
       padding: EdgeInsets.all(AppDimensions.paddingL),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(AppDimensions.radiusL),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: Theme.of(context).shadowColor.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
