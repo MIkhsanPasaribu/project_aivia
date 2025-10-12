@@ -163,7 +163,9 @@ class ConfirmationDialog extends StatelessWidget {
             backgroundColor: isDestructive
                 ? AppColors.error
                 : AppColors.primary,
-            foregroundColor: Colors.white,
+            foregroundColor: isDestructive
+                ? Theme.of(context).colorScheme.onError
+                : Theme.of(context).colorScheme.onPrimary,
             padding: EdgeInsets.symmetric(
               horizontal: AppDimensions.paddingL,
               vertical: AppDimensions.paddingM,
