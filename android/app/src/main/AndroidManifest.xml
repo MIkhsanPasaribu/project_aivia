@@ -1,4 +1,33 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    
+    <!-- ========================================== -->
+    <!-- PERMISSIONS - Phase 2 Location Tracking   -->
+    <!-- ========================================== -->
+    
+    <!-- Location permissions -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    
+    <!-- Background location (Android 10+) -->
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+    
+    <!-- Foreground service for persistent tracking -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+    
+    <!-- Internet (already implicit, but explicit is better) -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    
+    <!-- Wake lock untuk background tasks -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    
+    <!-- Firebase Cloud Messaging -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    
+    <!-- Vibrate untuk haptic feedback emergency button -->
+    <uses-permission android:name="android.permission.VIBRATE" />
+    
     <application
         android:label="project_aivia"
         android:name="${applicationName}"
