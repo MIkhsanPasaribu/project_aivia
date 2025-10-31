@@ -7,7 +7,9 @@ import 'package:project_aivia/data/models/activity.dart';
 import 'package:project_aivia/presentation/providers/activity_provider.dart';
 import 'package:project_aivia/presentation/widgets/common/loading_indicator.dart';
 import 'package:project_aivia/presentation/widgets/common/error_widget.dart';
+import 'package:project_aivia/presentation/screens/family/patient_tracking/patient_map_screen.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 /// Patient Detail Screen - Halaman detail pasien untuk keluarga
 ///
@@ -335,7 +337,17 @@ class PatientDetailScreen extends ConsumerWidget {
               ),
               TextButton(
                 onPressed: () {
-                  // TODO: Navigate to full activities list
+                  // Navigate to activities list untuk patient ini
+                  // Untuk saat ini kita bisa buat screen khusus atau reuse ActivityListScreen
+                  // TODO Phase 2.2: Create PatientActivitiesScreen yang bisa filter by patientId
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        'Fitur "Lihat Semua Aktivitas ${patient.fullName}" akan segera hadir',
+                      ),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
                 },
                 child: const Text('Lihat Semua'),
               ),
@@ -471,13 +483,34 @@ class PatientDetailScreen extends ConsumerWidget {
                   icon: Icons.phone,
                   label: 'Telepon',
                   color: AppColors.success,
-                  onTap: () {
-                    // TODO: Implement call functionality
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Fitur telepon akan segera hadir'),
-                      ),
-                    );
+                  onTap: () async {
+                    // Implement call functionality
+                    if (patient.phoneNumber == null ||
+                        patient.phoneNumber!.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Nomor telepon pasien belum tersedia'),
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                      return;
+                    }
+
+                    final phoneUrl = Uri.parse('tel:${patient.phoneNumber}');
+                    if (await canLaunchUrl(phoneUrl)) {
+                      await launchUrl(phoneUrl);
+                    } else {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Tidak dapat membuka aplikasi telepon',
+                            ),
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      }
+                    }
                   },
                 ),
               ),
@@ -488,13 +521,32 @@ class PatientDetailScreen extends ConsumerWidget {
                   icon: Icons.message,
                   label: 'Pesan',
                   color: AppColors.primary,
-                  onTap: () {
-                    // TODO: Implement message functionality
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Fitur pesan akan segera hadir'),
-                      ),
-                    );
+                  onTap: () async {
+                    // Implement SMS functionality
+                    if (patient.phoneNumber == null ||
+                        patient.phoneNumber!.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Nomor telepon pasien belum tersedia'),
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                      return;
+                    }
+
+                    final smsUrl = Uri.parse('sms:${patient.phoneNumber}');
+                    if (await canLaunchUrl(smsUrl)) {
+                      await launchUrl(smsUrl);
+                    } else {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Tidak dapat membuka aplikasi pesan'),
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      }
+                    }
                   },
                 ),
               ),
@@ -506,10 +558,11 @@ class PatientDetailScreen extends ConsumerWidget {
                   label: 'Lokasi',
                   color: AppColors.error,
                   onTap: () {
-                    // TODO: Navigate to map screen (Phase 2)
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Fitur peta akan tersedia di Phase 2'),
+                    // Navigate to map screen
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            PatientMapScreen(patientId: patient.id),
                       ),
                     );
                   },
