@@ -1,18 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:project_aivia/core/constants/app_strings.dart';
 import 'package:project_aivia/core/constants/app_dimensions.dart';
 import 'package:project_aivia/presentation/screens/patient/activity/activity_list_screen.dart';
 import 'package:project_aivia/presentation/screens/patient/profile_screen.dart';
+import 'package:project_aivia/presentation/widgets/emergency/emergency_button.dart';
+import 'package:project_aivia/presentation/providers/auth_provider.dart';
 
 /// Patient Home Screen dengan Bottom Navigation
-class PatientHomeScreen extends StatefulWidget {
+class PatientHomeScreen extends ConsumerStatefulWidget {
   const PatientHomeScreen({super.key});
 
   @override
-  State<PatientHomeScreen> createState() => _PatientHomeScreenState();
+  ConsumerState<PatientHomeScreen> createState() => _PatientHomeScreenState();
 }
 
-class _PatientHomeScreenState extends State<PatientHomeScreen> {
+class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
   int _selectedIndex = 0;
 
   // List of screens untuk bottom navigation
@@ -32,6 +35,10 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Get current user ID for emergency button
+    final currentUserAsync = ref.watch(currentUserProfileProvider);
+    final userId = currentUserAsync.value?.id ?? '';
+
     return Scaffold(
       body: AnimatedSwitcher(
         duration: const Duration(milliseconds: 300),
@@ -44,6 +51,16 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
           children: _screens,
         ),
       ),
+      floatingActionButton: userId.isNotEmpty
+          ? EmergencyButton(
+              patientId: userId,
+              onAlertCreated: () {
+                // Optional: Navigate to specific screen after alert created
+                // atau refresh data jika diperlukan
+              },
+            )
+          : null,
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           boxShadow: [
