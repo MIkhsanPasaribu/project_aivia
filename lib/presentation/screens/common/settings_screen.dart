@@ -1,19 +1,72 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:project_aivia/core/constants/app_colors.dart';
 import 'package:project_aivia/core/constants/app_strings.dart';
 import 'package:project_aivia/core/constants/app_dimensions.dart';
 import 'package:project_aivia/core/utils/logout_helper.dart';
+import 'package:project_aivia/core/utils/permission_helper.dart';
 import 'package:project_aivia/presentation/screens/common/help_screen.dart';
 import 'package:project_aivia/presentation/providers/notification_settings_provider.dart';
 import 'package:project_aivia/presentation/providers/theme_provider.dart';
 
 /// Settings Screen - Halaman pengaturan aplikasi
-class SettingsScreen extends ConsumerWidget {
+class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends ConsumerState<SettingsScreen> {
+  bool _isLocationPermissionGranted = false;
+  bool _isLoadingPermission = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkLocationPermission();
+  }
+
+  Future<void> _checkLocationPermission() async {
+    final status = await Permission.location.status;
+    if (mounted) {
+      setState(() {
+        _isLocationPermissionGranted = status.isGranted;
+        _isLoadingPermission = false;
+      });
+    }
+  }
+
+  Future<void> _handleLocationPermissionToggle(bool value) async {
+    if (value) {
+      // Request permission
+      if (!mounted) return;
+      final status = await PermissionHelper.requestLocationPermission(context);
+      if (mounted) {
+        setState(() {
+          _isLocationPermissionGranted = status.isGranted;
+        });
+        if (status.isGranted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Pelacakan lokasi diaktifkan')),
+          );
+        }
+      }
+    } else {
+      // Show guidance to disable in settings
+      if (!mounted) return;
+      await PermissionHelper.showPermissionDeniedDialog(
+        context,
+        permissionName: 'Lokasi',
+        reason:
+            'Untuk menonaktifkan pelacakan lokasi, silakan ubah pengaturan di sistem Android.',
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
@@ -86,21 +139,16 @@ class SettingsScreen extends ConsumerWidget {
             icon: Icons.location_on_outlined,
             title: 'Pelacakan Lokasi',
             subtitle: 'Izinkan aplikasi melacak lokasi',
-            trailing: Switch(
-              value: true, // TODO: Check actual permission status
-              onChanged: (value) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      value
-                          ? 'Pelacakan lokasi diaktifkan'
-                          : 'Pelacakan lokasi dinonaktifkan',
-                    ),
+            trailing: _isLoadingPermission
+                ? const SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : Switch(
+                    value: _isLocationPermissionGranted,
+                    onChanged: _handleLocationPermissionToggle,
                   ),
-                );
-              },
-              activeThumbColor: AppColors.primary,
-            ),
           ),
           _buildSettingTile(
             context,
