@@ -8,6 +8,7 @@ import '../../../providers/activity_provider.dart';
 import '../../../providers/location_provider.dart';
 import '../patients/link_patient_screen.dart';
 import '../patients/patient_detail_screen.dart';
+import '../patient_tracking/patient_map_screen.dart';
 
 /// Dashboard utama untuk Family Member
 ///
@@ -432,11 +433,11 @@ class FamilyDashboardScreen extends ConsumerWidget {
                     child: OutlinedButton.icon(
                       onPressed: link.canViewLocation
                           ? () {
-                              // TODO: Navigate to map
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                    'Fitur peta akan segera tersedia',
+                              // Navigate to map screen
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (context) => PatientMapScreen(
+                                    patientId: link.patientId,
                                   ),
                                 ),
                               );
