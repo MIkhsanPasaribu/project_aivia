@@ -14,6 +14,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/config/map_config.dart';
 import '../../../../core/constants/app_colors.dart';
@@ -254,8 +255,17 @@ class _PatientMapScreenState extends ConsumerState<PatientMapScreen> {
                 attributions: [
                   TextSourceAttribution(
                     MapConfig.osmAttribution,
-                    onTap: () {
-                      // TODO: Open OSM link
+                    onTap: () async {
+                      // Open OpenStreetMap website for licensing compliance
+                      final url = Uri.parse(
+                        'https://www.openstreetmap.org/copyright',
+                      );
+                      if (await canLaunchUrl(url)) {
+                        await launchUrl(
+                          url,
+                          mode: LaunchMode.externalApplication,
+                        );
+                      }
                     },
                   ),
                 ],
@@ -459,7 +469,19 @@ class _PatientMapScreenState extends ConsumerState<PatientMapScreen> {
                 child: ElevatedButton(
                   onPressed: () {
                     Navigator.pop(context);
-                    // TODO: Navigate to location history screen
+                    // TODO Phase 2.2: Create LocationHistoryScreen dengan:
+                    // - List view lokasi dengan timeline
+                    // - Date range filter
+                    // - Export ke CSV
+                    // - Distance traveled statistics
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'Fitur "Riwayat Lokasi" akan segera hadir di Phase 2.2',
+                        ),
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
                   },
                   child: const Text('Lihat Riwayat Lokasi'),
                 ),
