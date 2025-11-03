@@ -1,4 +1,4 @@
-# 🧠 AIVIA - Aplikasi Asisten Alzheimer
+# 🧠 AIVIA (Alzheimer Intelligent Virtual Interactive Assistant) - Aplikasi Asisteni Penderita Alzheimer
 
 [![Flutter](https://img.shields.io/badge/Flutter-3.9.2-blue.svg)](https://flutter.dev/)
 [![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-green.svg)](https://supabase.com/)
