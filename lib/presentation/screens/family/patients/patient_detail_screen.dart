@@ -8,6 +8,7 @@ import 'package:project_aivia/presentation/providers/activity_provider.dart';
 import 'package:project_aivia/presentation/widgets/common/loading_indicator.dart';
 import 'package:project_aivia/presentation/widgets/common/error_widget.dart';
 import 'package:project_aivia/presentation/screens/family/patient_tracking/patient_map_screen.dart';
+import 'package:project_aivia/presentation/screens/family/patients/patient_activities_screen.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -337,15 +338,12 @@ class PatientDetailScreen extends ConsumerWidget {
               ),
               TextButton(
                 onPressed: () {
-                  // Navigate to activities list untuk patient ini
-                  // Untuk saat ini kita bisa buat screen khusus atau reuse ActivityListScreen
-                  // TODO Phase 2.2: Create PatientActivitiesScreen yang bisa filter by patientId
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        'Fitur "Lihat Semua Aktivitas ${patient.fullName}" akan segera hadir',
-                      ),
-                      behavior: SnackBarBehavior.floating,
+                  // Navigate to PatientActivitiesScreen
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          PatientActivitiesScreen(patient: patient),
                     ),
                   );
                 },
