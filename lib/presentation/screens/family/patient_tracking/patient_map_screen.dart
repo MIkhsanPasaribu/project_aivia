@@ -10,6 +10,8 @@
 /// - Loading/error/empty states
 library;
 
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -19,7 +21,9 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/config/map_config.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../data/models/location.dart' as app_location;
+import '../../../../data/models/user_profile.dart';
 import '../../../providers/location_provider.dart';
+import 'location_history_screen.dart';
 
 class PatientMapScreen extends ConsumerStatefulWidget {
   const PatientMapScreen({required this.patientId, super.key});
@@ -195,6 +199,11 @@ class _PatientMapScreenState extends ConsumerState<PatientMapScreen> {
   Widget _buildMapView(app_location.Location location) {
     final center = LatLng(location.latitude, location.longitude);
 
+    // Get recent locations untuk trail (last 24 hours, limit 50)
+    final recentLocationsAsync = ref.watch(
+      recentLocationsProvider(widget.patientId),
+    );
+
     return Stack(
       children: [
         // Map widget
@@ -217,6 +226,27 @@ class _PatientMapScreenState extends ConsumerState<PatientMapScreen> {
               maxZoom: MapConfig.maxZoom,
               // TODO: Add caching in future optimization
             ),
+
+            // Location trail polyline (recent locations)
+            if (recentLocationsAsync.hasValue &&
+                recentLocationsAsync.value!.isNotEmpty)
+              PolylineLayer(
+                polylines: [
+                  Polyline(
+                    points: recentLocationsAsync.value!
+                        .map((loc) => LatLng(loc.latitude, loc.longitude))
+                        .toList(),
+                    strokeWidth: 3.0,
+                    color: AppColors.primary.withValues(alpha: 0.7),
+                    borderColor: Colors.white,
+                    borderStrokeWidth: 1.0,
+                    gradientColors: [
+                      AppColors.primary.withValues(alpha: 0.3),
+                      AppColors.primary,
+                    ],
+                  ),
+                ],
+              ),
 
             // Accuracy circle (if accuracy > threshold)
             if (location.accuracy != null &&
@@ -293,20 +323,51 @@ class _PatientMapScreenState extends ConsumerState<PatientMapScreen> {
       onTap: () {
         _showPatientInfo(location);
       },
-      child: Container(
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: AppColors.primary,
-          border: Border.all(color: Colors.white, width: 3),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.3),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // Pulse animation background
+          TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0.8, end: 1.2),
+            duration: const Duration(seconds: 2),
+            curve: Curves.easeInOut,
+            builder: (context, value, child) {
+              return Transform.scale(
+                scale: value,
+                child: Container(
+                  width: 60,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: AppColors.primary.withValues(alpha: 0.3),
+                  ),
+                ),
+              );
+            },
+            onEnd: () {
+              // Loop animation
+              setState(() {});
+            },
+          ),
+          // Main marker
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: AppColors.primary,
+              border: Border.all(color: Colors.white, width: 3),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
-          ],
-        ),
-        child: const Icon(Icons.person, color: Colors.white, size: 28),
+            child: const Icon(Icons.person, color: Colors.white, size: 28),
+          ),
+        ],
       ),
     );
   }
@@ -316,6 +377,18 @@ class _PatientMapScreenState extends ConsumerState<PatientMapScreen> {
     final now = DateTime.now();
     final diff = now.difference(location.timestamp);
     final lastUpdate = _formatTimeDifference(diff);
+
+    // Get recent locations untuk statistics
+    final recentLocationsAsync = ref.watch(
+      recentLocationsProvider(widget.patientId),
+    );
+
+    // Calculate distance traveled (if we have recent locations)
+    double? distanceTraveled;
+    if (recentLocationsAsync.hasValue &&
+        recentLocationsAsync.value!.length > 1) {
+      distanceTraveled = _calculateTotalDistance(recentLocationsAsync.value!);
+    }
 
     return Card(
       elevation: 4,
@@ -333,10 +406,12 @@ class _PatientMapScreenState extends ConsumerState<PatientMapScreen> {
                   color: AppColors.textSecondary,
                 ),
                 const SizedBox(width: 8),
-                Text(
-                  'Lokasi terakhir: $lastUpdate',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: AppColors.textSecondary,
+                Expanded(
+                  child: Text(
+                    'Terakhir: $lastUpdate',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
                   ),
                 ),
               ],
@@ -352,9 +427,27 @@ class _PatientMapScreenState extends ConsumerState<PatientMapScreen> {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    'Akurasi: ${location.accuracy!.round()} meter',
+                    'Akurasi: ${location.accuracy!.round()} m',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: _getAccuracyColor(location.accuracy!),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+            if (distanceTraveled != null) ...[
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  const Icon(Icons.route, size: 16, color: AppColors.primary),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Jarak: ${distanceTraveled >= 1000 ? '${(distanceTraveled / 1000).toStringAsFixed(2)} km' : '${distanceTraveled.round()} m'}',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ),
                 ],
@@ -469,17 +562,22 @@ class _PatientMapScreenState extends ConsumerState<PatientMapScreen> {
                 child: ElevatedButton(
                   onPressed: () {
                     Navigator.pop(context);
-                    // TODO Phase 2.2: Create LocationHistoryScreen dengan:
-                    // - List view lokasi dengan timeline
-                    // - Date range filter
-                    // - Export ke CSV
-                    // - Distance traveled statistics
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                          'Fitur "Riwayat Lokasi" akan segera hadir di Phase 2.2',
-                        ),
-                        behavior: SnackBarBehavior.floating,
+                    // Navigate to LocationHistoryScreen
+                    // Create minimal UserProfile dari patientId
+                    final patientProfile = UserProfile(
+                      id: widget.patientId,
+                      email: '',
+                      fullName: 'Pasien',
+                      userRole: UserRole.patient,
+                      createdAt: DateTime.now(),
+                      updatedAt: DateTime.now(),
+                    );
+
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            LocationHistoryScreen(patient: patientProfile),
                       ),
                     );
                   },
@@ -547,5 +645,51 @@ class _PatientMapScreenState extends ConsumerState<PatientMapScreen> {
     if (accuracy <= 25) return AppColors.success;
     if (accuracy <= 50) return AppColors.warning;
     return AppColors.error;
+  }
+
+  /// Calculate total distance from list of locations
+  double _calculateTotalDistance(List<app_location.Location> locations) {
+    if (locations.length < 2) return 0;
+
+    double totalDistance = 0;
+    for (int i = 0; i < locations.length - 1; i++) {
+      final loc1 = locations[i];
+      final loc2 = locations[i + 1];
+      totalDistance += _calculateDistance(
+        loc1.latitude,
+        loc1.longitude,
+        loc2.latitude,
+        loc2.longitude,
+      );
+    }
+    return totalDistance;
+  }
+
+  /// Calculate distance between two coordinates using Haversine formula
+  double _calculateDistance(
+    double lat1,
+    double lon1,
+    double lat2,
+    double lon2,
+  ) {
+    const double earthRadius = 6371000; // meters
+    final dLat = _toRadians(lat2 - lat1);
+    final dLon = _toRadians(lon2 - lon1);
+    final lat1Rad = _toRadians(lat1);
+    final lat2Rad = _toRadians(lat2);
+
+    final a =
+        math.sin(dLat / 2) * math.sin(dLat / 2) +
+        math.cos(lat1Rad) *
+            math.cos(lat2Rad) *
+            math.sin(dLon / 2) *
+            math.sin(dLon / 2);
+    final c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a));
+    return earthRadius * c;
+  }
+
+  /// Convert degrees to radians
+  double _toRadians(double degrees) {
+    return degrees * (math.pi / 180);
   }
 }
