@@ -25,12 +25,19 @@ subprojects {
                 }
             }
         }
+        
+        // 🆕 Force Kotlin target to JVM 17 for all modules
+        tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+            kotlinOptions {
+                jvmTarget = "17"
+            }
+        }
     }
 }
 subprojects {
     project.evaluationDependsOn(":app")
 }
 
-tasks.register<Delete>("clean") {
+tasks.register<Delete>("clean") {v
     delete(rootProject.layout.buildDirectory)
 }
