@@ -4,7 +4,11 @@ import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart' as ph;
 import 'package:project_aivia/core/utils/result.dart';
 import 'package:project_aivia/core/errors/failures.dart';
+import 'package:project_aivia/core/utils/location_validator.dart';
+import 'package:project_aivia/data/models/location.dart';
 import 'package:project_aivia/data/repositories/location_repository.dart';
+import 'package:project_aivia/data/services/offline_queue_service.dart';
+import 'package:project_aivia/data/services/location_queue_database.dart';
 
 /// Service untuk background location tracking dengan battery optimization
 ///
@@ -15,10 +19,17 @@ import 'package:project_aivia/data/repositories/location_repository.dart';
 /// - Battery-efficient tracking modes
 /// - Automatic save to database
 /// - Location accuracy filtering
+/// - **NEW**: Location validation (enterprise-grade)
+/// - **NEW**: Offline queue (prevent data loss)
 class LocationService {
-  LocationService(this._locationRepository);
+  LocationService(this._locationRepository, {OfflineQueueService? offlineQueue})
+    : _offlineQueue = offlineQueue ?? OfflineQueueService();
 
+  // This repository is kept for future direct-sync use; currently it's
+  // injected but not used by all code paths. Suppress unused_field lint.
+  // ignore: unused_field
   final LocationRepository _locationRepository;
+  final OfflineQueueService _offlineQueue;
 
   // Tracking state
   bool _isTracking = false;
@@ -26,9 +37,16 @@ class LocationService {
   StreamSubscription<Position>? _positionSubscription;
   TrackingMode _trackingMode = TrackingMode.balanced;
 
+  // Validation state (NEW)
+  Location? _lastValidLocation;
+  int _invalidLocationCount = 0;
+  int _totalLocationsProcessed = 0;
+
   // Getters
   bool get isTracking => _isTracking;
   TrackingMode get currentMode => _trackingMode;
+  int get invalidLocationCount => _invalidLocationCount; // NEW
+  int get totalLocationsProcessed => _totalLocationsProcessed; // NEW
 
   /// Initialize location service
   ///
@@ -45,6 +63,9 @@ class LocationService {
           ),
         );
       }
+
+      // Initialize offline queue service (NEW)
+      await _offlineQueue.initialize();
 
       return const Success(null);
     } catch (e) {
@@ -278,34 +299,78 @@ class LocationService {
   }
 
   /// Handle position update from stream
+  ///
+  /// NEW FEATURES:
+  /// - Validate location quality before saving
+  /// - Check for unrealistic speed/GPS jumps
+  /// - Queue to offline storage if network unavailable
+  /// - Track validation statistics
   Future<void> _handlePositionUpdate(
     Position position,
     String patientId,
   ) async {
     try {
-      // Filter out low accuracy positions (> 100 meters)
-      if (position.accuracy > 100) {
-        debugPrint('⚠️ Low accuracy position skipped: ${position.accuracy}m');
-        return;
-      }
+      _totalLocationsProcessed++;
 
-      // Save to database
-      final result = await _locationRepository.insertLocation(
+      // Convert Position to Location model
+      final location = Location(
         patientId: patientId,
         latitude: position.latitude,
         longitude: position.longitude,
         accuracy: position.accuracy,
+        timestamp: DateTime.now(),
       );
 
-      if (result.isSuccess) {
+      // STEP 1: Validate location quality (NEW)
+      final validation = LocationValidator.validate(
+        location,
+        previous: _lastValidLocation,
+      );
+
+      // Handle validation result
+      if (validation.isInvalid) {
+        _invalidLocationCount++;
+        debugPrint('❌ Invalid location rejected: ${validation.message}');
+        return; // Skip saving invalid location
+      }
+
+      if (validation.isWarning) {
+        debugPrint('⚠️ Location warning: ${validation.message}');
+        // Continue but log the warning
+      }
+
+      // STEP 2: Queue location (offline-first architecture) (NEW)
+      final queueResult = await _offlineQueue.queueLocation(
+        location,
+        altitude: position.altitude,
+        speed: position.speed,
+        heading: position.heading,
+        isBackground: !_isTracking, // Track if from background
+      );
+
+      if (queueResult.isSuccess) {
+        _lastValidLocation = location; // Update last valid location
+
         debugPrint(
-          '📍 Location saved: '
+          '📍 Location queued: '
           '${position.latitude.toStringAsFixed(6)}, '
           '${position.longitude.toStringAsFixed(6)} '
-          '(accuracy: ${position.accuracy.toStringAsFixed(1)}m)',
+          '(accuracy: ${position.accuracy.toStringAsFixed(1)}m) '
+          '[${_totalLocationsProcessed - _invalidLocationCount}/$_totalLocationsProcessed valid]',
         );
+
+        // Log validation stats every 10 locations
+        if (_totalLocationsProcessed % 10 == 0) {
+          final stats = await _offlineQueue.getStats();
+          final synced = stats.synced;
+          final unsynced = stats.unsynced;
+          final failed = stats.failed;
+          debugPrint(
+            '📊 Stats: $synced synced, $unsynced pending, $failed failed',
+          );
+        }
       } else {
-        debugPrint('❌ Failed to save location: ${result.failure}');
+        debugPrint('❌ Failed to queue location: ${queueResult.failure}');
       }
     } catch (e) {
       debugPrint('❌ Error handling position update: $e');
@@ -315,6 +380,17 @@ class LocationService {
   /// Dispose resources
   void dispose() {
     stopTracking();
+    _offlineQueue.dispose(); // NEW: Cleanup offline queue
+  }
+
+  /// Get offline queue statistics (NEW)
+  Future<QueueStats> getQueueStats() async {
+    return await _offlineQueue.getStats();
+  }
+
+  /// Manually trigger sync of pending locations (NEW)
+  Future<Result<SyncResult>> syncPendingLocations() async {
+    return await _offlineQueue.syncPendingLocations();
   }
 }
 
