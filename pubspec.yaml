@@ -34,11 +34,12 @@ dependencies:
   permission_handler: ^11.0.1
 
   # Background Tasks (Phase 2.3A - FREE)
-  workmanager: ^0.5.2
+  # workmanager: ^0.5.2  # REMOVED - not compatible with Flutter 3.22+
   flutter_foreground_task: ^8.0.0
 
   # Offline Queue (Phase 2.3A - FREE)
   sqflite: ^2.3.0
+  path: ^1.9.0
 
   # Network Monitoring (Phase 2.3A - FREE)
   connectivity_plus: ^5.0.2
@@ -54,6 +55,10 @@ dependencies:
   firebase_crashlytics: ^4.1.3
   firebase_analytics: ^11.3.3
   firebase_performance: ^0.10.0+8
+
+  # FCM Support (Phase 2.3D - FREE)
+  flutter_local_notifications: ^17.2.3
+  device_info_plus: ^10.1.2
 
   # UI & Utilities
   go_router: ^16.2.4
