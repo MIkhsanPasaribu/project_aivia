@@ -69,3 +69,6 @@ supabase/.temp
 *.jks
 *.keystore
 **/android/key.properties
+
+# Firebase credentials
+.credentials/
