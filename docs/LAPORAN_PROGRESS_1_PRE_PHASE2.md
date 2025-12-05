@@ -2,9 +2,9 @@
 
 ## Tahap Persiapan Phase 2 (Pre-Phase 2)
 
-**Nama Proyek**: AIVIA - Aplikasi Asisten Alzheimer  
+**Nama Proyek**: AIVIA (Alzheimer Intelligent Virtual Interactive Assistant) - Aplikasi Asisten Alzheimer  
 **Periode**: 11 - 12 Oktober 2025  
-**Disusun oleh**: Mikhsan Pasaribu  
+**Disusun oleh**: M. Ikhsan Pasaribu  
 **Status**: Selesai (100%)
 
 ---

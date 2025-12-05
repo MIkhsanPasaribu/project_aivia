@@ -2,9 +2,9 @@
 
 ## Implementasi Phase 2: Location Tracking & Map System
 
-**Nama Proyek**: AIVIA - Aplikasi Asisten Alzheimer  
+**Nama Proyek**: AIVIA (Alzheimer Intelligent Virtual Interactive Assistant) - Aplikasi Asisten Alzheimer  
 **Periode**: Oktober 2025 - Ongoing  
-**Disusun oleh**: Mikhsan Pasaribu  
+**Disusun oleh**: M. Ikhsan Pasaribu  
 **Status**: Dalam Progress (Sprint 2.1.2 - Map UI)
 
 ---
