@@ -3,6 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+// 🆕 Firebase imports
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'firebase_options.dart';
+
 import 'package:project_aivia/core/config/theme_config.dart';
 import 'package:project_aivia/core/config/supabase_config.dart';
 import 'package:project_aivia/core/constants/app_strings.dart';
@@ -12,9 +17,17 @@ import 'package:project_aivia/presentation/screens/auth/login_screen.dart';
 import 'package:project_aivia/presentation/screens/auth/register_screen.dart';
 import 'package:project_aivia/presentation/screens/patient/patient_home_screen.dart';
 import 'package:project_aivia/presentation/screens/family/family_home_screen.dart';
+// 🆕 FCM Service import
+import 'package:project_aivia/data/services/fcm_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // 🆕 Initialize Firebase FIRST (before Supabase)
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  // 🆕 Register background message handler (MUST be before any other Firebase code)
+  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
   // Load environment variables dari .env
   await dotenv.load(fileName: ".env");
@@ -27,6 +40,11 @@ void main() async {
     url: SupabaseConfig.supabaseUrl,
     anonKey: SupabaseConfig.supabaseAnonKey,
   );
+
+  // 🆕 Initialize FCM Service (after Supabase for auth)
+  // Note: Full initialization akan dipanggil setelah user login
+  // Karena butuh user_id untuk save token ke database
+  debugPrint('✅ Main: All services initialized');
 
   runApp(const ProviderScope(child: MainApp()));
 }
