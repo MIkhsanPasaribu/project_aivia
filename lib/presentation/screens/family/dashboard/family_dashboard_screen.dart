@@ -9,6 +9,7 @@ import '../../../providers/location_provider.dart';
 import '../patients/link_patient_screen.dart';
 import '../patients/patient_detail_screen.dart';
 import '../patient_tracking/patient_map_screen.dart';
+import '../geofences/geofence_list_screen.dart';
 
 /// Dashboard utama untuk Family Member
 ///
@@ -456,6 +457,36 @@ class FamilyDashboardScreen extends ConsumerWidget {
                     ),
                   ),
                 ],
+              ),
+
+              const SizedBox(height: AppDimensions.paddingS),
+
+              // Geofences Button (New)
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => GeofenceListScreen(
+                          patientId: link.patientId,
+                          patientName: patient.fullName,
+                        ),
+                      ),
+                    );
+                  },
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Theme.of(context).colorScheme.tertiary,
+                    side: BorderSide(
+                      color: Theme.of(context).colorScheme.tertiary,
+                    ),
+                  ),
+                  icon: const Icon(Icons.location_searching, size: 18),
+                  label: const Text(
+                    'Zona Geografis',
+                    style: TextStyle(fontSize: 14),
+                  ),
+                ),
               ),
             ],
           ),
