@@ -5,6 +5,7 @@ import 'package:project_aivia/core/constants/app_strings.dart';
 import 'package:project_aivia/core/constants/app_dimensions.dart';
 import 'package:project_aivia/core/utils/validators.dart';
 import 'package:project_aivia/presentation/providers/auth_provider.dart';
+import 'package:project_aivia/presentation/providers/fcm_provider.dart';
 import 'package:project_aivia/data/models/user_profile.dart';
 
 /// Login Screen - Halaman masuk akun
@@ -49,7 +50,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       if (!mounted) return;
 
       result.fold(
-        onSuccess: (userProfile) {
+        onSuccess: (userProfile) async {
+          // ✨ Initialize FCM service untuk notifikasi
+          try {
+            final fcmService = ref.read(fcmServiceProvider);
+            await fcmService.initialize();
+            debugPrint('✅ FCM initialized after login');
+          } catch (e) {
+            debugPrint('⚠️ FCM initialization failed: $e');
+            // Don't block navigation if FCM fails
+          }
+
+          if (!mounted) return;
+
           // Navigate based on user role
           final route = userProfile.userRole == UserRole.patient
               ? '/patient/home'
