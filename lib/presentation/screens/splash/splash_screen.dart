@@ -5,6 +5,7 @@ import 'package:project_aivia/core/constants/app_strings.dart';
 import 'package:project_aivia/core/constants/app_dimensions.dart';
 import 'package:project_aivia/presentation/providers/auth_provider.dart';
 import 'package:project_aivia/presentation/providers/profile_provider.dart';
+import 'package:project_aivia/presentation/providers/fcm_provider.dart';
 import 'package:project_aivia/data/models/user_profile.dart';
 
 /// Splash Screen - Tampilan awal aplikasi
@@ -61,8 +62,21 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     final authState = ref.read(authStateChangesProvider);
 
     authState.when(
-      data: (user) {
+      data: (user) async {
         if (user != null) {
+          // ✨ User sudah login, check & refresh FCM token
+          try {
+            final fcmService = ref.read(fcmServiceProvider);
+            if (fcmService.currentToken == null) {
+              await fcmService.initialize();
+              debugPrint('✅ FCM token refreshed on app start');
+            }
+          } catch (e) {
+            debugPrint('⚠️ FCM token refresh failed: $e');
+          }
+
+          if (!mounted) return;
+
           // User sudah login, ambil profile untuk cek role
           ref.read(currentUserProfileStreamProvider).whenData((profile) {
             if (!mounted) return;
