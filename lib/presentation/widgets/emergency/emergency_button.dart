@@ -6,6 +6,9 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/utils/result.dart';
 import '../../providers/emergency_provider.dart';
 import '../../providers/location_service_provider.dart';
+import '../../providers/profile_provider.dart';
+import '../../../data/repositories/fcm_repository.dart';
+import '../../../data/repositories/emergency_repository.dart';
 
 /// Emergency Button Widget - FAB untuk trigger emergency alert
 ///
@@ -101,8 +104,59 @@ class _EmergencyButtonState extends ConsumerState<EmergencyButton>
       if (!mounted) return;
 
       result.fold(
-        onSuccess: (_) {
-          // Success!
+        onSuccess: (alert) async {
+          // ✨ Queue notifications untuk emergency contacts
+          try {
+            final fcmRepository = FCMRepository();
+            final emergencyRepo = EmergencyRepository();
+
+            // Get emergency contacts
+            final contactsResult = await emergencyRepo.getContacts(
+              widget.patientId,
+            );
+
+            if (contactsResult is Success) {
+              final contacts = contactsResult.data;
+
+              // Get patient profile untuk nama
+              final profileAsync = ref.read(currentUserProfileStreamProvider);
+              final patientName = profileAsync.whenData(
+                (profile) => profile?.fullName ?? 'Pasien',
+              );
+
+              // Queue notification untuk setiap contact
+              for (final contact in contacts) {
+                try {
+                  await fcmRepository.queueNotification(
+                    recipientUserId: contact.contactId,
+                    notificationType: 'emergency',
+                    title: 'PERINGATAN DARURAT!',
+                    body:
+                        '${patientName.value ?? "Pasien"} membutuhkan bantuan segera!',
+                    data: {
+                      'type': 'emergency_alert',
+                      'patient_id': widget.patientId,
+                      'alert_id': alert.id,
+                      'latitude': position?.latitude.toString(),
+                      'longitude': position?.longitude.toString(),
+                    },
+                    priority: 10, // Max priority untuk emergency
+                  );
+                } catch (e) {
+                  debugPrint('⚠️ Failed to queue notification for contact: $e');
+                }
+              }
+
+              debugPrint(
+                '✅ Emergency notifications queued for ${contacts.length} contacts',
+              );
+            }
+          } catch (e) {
+            debugPrint('⚠️ Error queueing emergency notifications: $e');
+            // Don't fail the whole process if notification queueing fails
+          }
+
+          // Show success message
           _showSuccessSnackBar();
           widget.onAlertCreated?.call();
         },
