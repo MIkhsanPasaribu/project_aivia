@@ -6,6 +6,7 @@ import 'package:project_aivia/core/constants/app_dimensions.dart';
 import 'package:project_aivia/core/utils/validators.dart';
 import 'package:project_aivia/data/models/user_profile.dart';
 import 'package:project_aivia/presentation/providers/auth_provider.dart';
+import 'package:project_aivia/presentation/providers/fcm_provider.dart';
 
 /// Register Screen - Halaman pendaftaran akun
 class RegisterScreen extends ConsumerStatefulWidget {
@@ -86,8 +87,20 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       Navigator.of(context).pop();
 
       result.fold(
-        onSuccess: (userProfile) {
+        onSuccess: (userProfile) async {
           setState(() => _isLoading = false);
+
+          // ✨ Initialize FCM service untuk notifikasi
+          try {
+            final fcmService = ref.read(fcmServiceProvider);
+            await fcmService.initialize();
+            debugPrint('✅ FCM initialized after registration');
+          } catch (e) {
+            debugPrint('⚠️ FCM initialization failed: $e');
+            // Don't block navigation if FCM fails
+          }
+
+          if (!mounted) return;
 
           // Show success message
           ScaffoldMessenger.of(context).showSnackBar(
