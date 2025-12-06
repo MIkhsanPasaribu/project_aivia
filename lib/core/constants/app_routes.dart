@@ -27,6 +27,12 @@ class AppRoutes {
   static const String editPerson = '/family/persons/edit/:id';
   static const String familyProfile = '/family/profile';
 
+  // Geofences (Family)
+  static const String geofences = '/family/geofences';
+  static const String addGeofence = '/family/geofences/add';
+  static const String editGeofence = '/family/geofences/edit/:id';
+  static const String geofenceDetail = '/family/geofences/detail/:id';
+
   // Admin
   static const String adminHome = '/admin/home';
 }
