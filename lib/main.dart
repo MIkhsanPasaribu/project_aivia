@@ -20,6 +20,9 @@ import 'package:project_aivia/presentation/screens/family/family_home_screen.dar
 // 🆕 FCM Service import
 import 'package:project_aivia/data/services/fcm_service.dart';
 
+/// 🎯 Global Navigator Key untuk FCM notification tap handling
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -46,6 +49,9 @@ void main() async {
   // Karena butuh user_id untuk save token ke database
   debugPrint('✅ Main: All services initialized');
 
+  // 🆕 Set navigator key untuk FCM notification tap handling
+  FCMService.setNavigatorKey(navigatorKey);
+
   runApp(const ProviderScope(child: MainApp()));
 }
 
@@ -60,7 +66,7 @@ class MainApp extends ConsumerWidget {
     return MaterialApp(
       title: AppStrings.appName,
       debugShowCheckedModeBanner: false,
-
+      navigatorKey: navigatorKey, // 🆕 Navigator key untuk FCM tap handling
       // Theme configuration dengan dark mode support
       theme: ThemeConfig.lightTheme,
       darkTheme: ThemeConfig.darkTheme,
