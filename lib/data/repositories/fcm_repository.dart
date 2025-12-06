@@ -251,6 +251,61 @@ class FCMRepository {
     }
   }
 
+  /// Queue notification untuk dikirim via Edge Function
+  ///
+  /// Notification akan diambil oleh cron job dan dikirim via FCM
+  ///
+  /// Parameters:
+  /// - [recipientUserId]: User ID penerima notifikasi
+  /// - [notificationType]: 'emergency', 'geofence', 'activity', 'reminder', 'system'
+  /// - [title]: Judul notifikasi
+  /// - [body]: Isi notifikasi
+  /// - [data]: Data tambahan untuk navigation & actions (JSON)
+  /// - [priority]: Priority level 1-10 (10 = tertinggi, default: 5)
+  ///
+  /// Returns:
+  /// - Notification ID jika berhasil
+  /// - Throws exception jika gagal
+  Future<String> queueNotification({
+    required String recipientUserId,
+    required String notificationType,
+    required String title,
+    required String body,
+    Map<String, dynamic>? data,
+    int priority = 5,
+  }) async {
+    try {
+      debugPrint(
+        '📮 FCMRepository: Queueing notification for user $recipientUserId...',
+      );
+      debugPrint('Type: $notificationType, Priority: $priority');
+
+      final response = await _supabase
+          .from('pending_notifications')
+          .insert({
+            'recipient_user_id': recipientUserId,
+            'notification_type': notificationType,
+            'title': title,
+            'body': body,
+            'data': data ?? {},
+            'status': 'pending',
+            'scheduled_at': DateTime.now().toIso8601String(),
+            'priority': priority,
+          })
+          .select('id')
+          .single();
+
+      final notificationId = response['id'] as String;
+
+      debugPrint('✅ FCMRepository: Notification queued: $notificationId');
+
+      return notificationId;
+    } catch (e) {
+      debugPrint('❌ FCMRepository: Queue notification error: $e');
+      rethrow;
+    }
+  }
+
   /// Get total active tokens count (for monitoring)
   Future<int> getActiveTokensCount() async {
     try {
