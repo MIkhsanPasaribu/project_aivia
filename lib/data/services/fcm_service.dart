@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -47,6 +47,15 @@ class FCMService {
 
   final StreamController<String> _tokenRefreshController =
       StreamController<String>.broadcast();
+
+  /// 🆕 Global navigator key untuk navigation dari background
+  static GlobalKey<NavigatorState>? navigatorKey;
+
+  /// 🆕 Set navigator key (call dari main.dart)
+  static void setNavigatorKey(GlobalKey<NavigatorState> key) {
+    navigatorKey = key;
+    debugPrint('✅ FCMService: Navigator key set');
+  }
 
   /// Stream untuk listening foreground messages
   Stream<RemoteMessage> get onMessage => _messageStreamController.stream;
@@ -98,6 +107,9 @@ class FCMService {
 
       // Step 6: Setup token refresh listener
       _setupTokenRefreshListener();
+
+      // 🆕 Step 7: Setup notification tap handlers
+      _setupNotificationTapHandlers();
 
       debugPrint('✅ FCMService: Initialized successfully');
     } catch (e, stackTrace) {
@@ -303,7 +315,7 @@ class FCMService {
       debugPrint('Data: ${message.data}');
 
       // Handle navigation
-      _handleNotificationTap(message.data);
+      _handleNotificationTap(message);
     });
 
     // 3. Check initial message - app opened from terminated state
@@ -319,7 +331,7 @@ class FCMService {
         debugPrint('Data: ${initialMessage.data}');
 
         // Handle navigation
-        _handleNotificationTap(initialMessage.data);
+        _handleNotificationTap(initialMessage);
       }
     } catch (e) {
       debugPrint('❌ FCMService: Check initial message error: $e');
@@ -412,31 +424,6 @@ class FCMService {
     // TODO: Implement navigation logic based on payload
   }
 
-  /// Handle notification tap with data
-  void _handleNotificationTap(Map<String, dynamic> data) {
-    debugPrint('🧭 FCMService: Handling notification tap with data: $data');
-
-    // TODO: Implement navigation based on notification type
-    final type = data['type'] as String?;
-
-    switch (type) {
-      case 'emergency':
-        // Navigate to emergency details
-        debugPrint('→ Navigate to emergency details: ${data['alert_id']}');
-        break;
-      case 'geofence_violation':
-        // Navigate to patient map
-        debugPrint('→ Navigate to patient map: ${data['patient_id']}');
-        break;
-      case 'activity_reminder':
-        // Navigate to activities
-        debugPrint('→ Navigate to activities: ${data['activity_id']}');
-        break;
-      default:
-        debugPrint('⚠️ Unknown notification type: $type');
-    }
-  }
-
   /// Manually refresh FCM token
   Future<String?> refreshToken() async {
     try {
@@ -475,6 +462,103 @@ class FCMService {
     } catch (e) {
       debugPrint('❌ FCMService: Get permission status error: $e');
       return AuthorizationStatus.notDetermined;
+    }
+  }
+
+  // ============================================================================
+  // 🆕 NOTIFICATION TAP HANDLERS
+  // ============================================================================
+
+  /// Setup notification tap handlers
+  ///
+  /// Handles:
+  /// - App opened from terminated state (getInitialMessage)
+  /// - App opened from background (onMessageOpenedApp)
+  void _setupNotificationTapHandlers() {
+    debugPrint('🔔 FCMService: Setting up notification tap handlers...');
+
+    // Handle notification tap ketika app opened from terminated state
+    _firebaseMessaging.getInitialMessage().then((message) {
+      if (message != null) {
+        debugPrint('🔔 FCMService: App opened from terminated by notification');
+        _handleNotificationTap(message);
+      }
+    });
+
+    // Handle notification tap ketika app di background
+    FirebaseMessaging.onMessageOpenedApp.listen((message) {
+      debugPrint('🔔 FCMService: App opened from background by notification');
+      _handleNotificationTap(message);
+    });
+
+    debugPrint('✅ FCMService: Notification tap handlers setup complete');
+  }
+
+  /// Handle notification tap - navigate based on notification type
+  ///
+  /// Navigation routes:
+  /// - `emergency_alert` → Patient map screen
+  /// - `geofence_alert` → Geofence detail screen
+  /// - `activity_reminder` → Activity list screen
+  void _handleNotificationTap(RemoteMessage message) {
+    debugPrint('🔔 FCMService: Notification tapped');
+    debugPrint('Data: ${message.data}');
+
+    // Check if navigator key is set
+    if (navigatorKey == null || navigatorKey!.currentContext == null) {
+      debugPrint('⚠️ FCMService: Navigator key not set, cannot navigate');
+      return;
+    }
+
+    final data = message.data;
+    final type = data['type'] as String?;
+
+    if (type == null) {
+      debugPrint('⚠️ FCMService: Notification type not found in data');
+      return;
+    }
+
+    debugPrint('🔔 FCMService: Handling notification type: $type');
+
+    // Navigate based on type
+    switch (type) {
+      case 'emergency_alert':
+        final patientId = data['patient_id'] as String?;
+        if (patientId != null) {
+          debugPrint('🔔 FCMService: Navigating to patient map...');
+          navigatorKey!.currentState?.pushNamed(
+            '/family/patient-map',
+            arguments: {'patient_id': patientId},
+          );
+        } else {
+          debugPrint(
+            '⚠️ FCMService: patient_id not found in emergency alert data',
+          );
+        }
+        break;
+
+      case 'geofence_alert':
+        final geofenceId = data['geofence_id'] as String?;
+        if (geofenceId != null) {
+          debugPrint('🔔 FCMService: Navigating to geofence detail...');
+          navigatorKey!.currentState?.pushNamed(
+            '/family/geofence-detail',
+            arguments: {'geofence_id': geofenceId},
+          );
+        } else {
+          debugPrint(
+            '⚠️ FCMService: geofence_id not found in geofence alert data',
+          );
+        }
+        break;
+
+      case 'activity_reminder':
+        debugPrint('🔔 FCMService: Navigating to activity list...');
+        navigatorKey!.currentState?.pushNamed('/patient/activities');
+        break;
+
+      default:
+        debugPrint('⚠️ FCMService: Unknown notification type: $type');
     }
   }
 
