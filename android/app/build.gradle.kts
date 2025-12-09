@@ -17,6 +17,8 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+        // 🆕 Enable core library desugaring (required by flutter_local_notifications)
+        isCoreLibraryDesugaringEnabled = true
     }
 
     kotlinOptions {
@@ -28,7 +30,7 @@ android {
         applicationId = "com.example.project_aivia"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
+        minSdk = 26 // Updated for tflite_flutter compatibility (requires Android 8.0+)
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
@@ -49,6 +51,9 @@ flutter {
 
 // 🆕 Firebase Dependencies
 dependencies {
+    // Core library desugaring (required by flutter_local_notifications)
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
+    
     // Firebase BOM (Bill of Materials) - manages versions automatically
     implementation(platform("com.google.firebase:firebase-bom:33.6.0"))
     
