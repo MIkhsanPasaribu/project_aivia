@@ -19,6 +19,8 @@ import 'package:project_aivia/presentation/screens/patient/patient_home_screen.d
 import 'package:project_aivia/presentation/screens/family/family_home_screen.dart';
 // 🆕 FCM Service import
 import 'package:project_aivia/data/services/fcm_service.dart';
+// 🆕 Notification Service import
+import 'package:project_aivia/data/services/notification_service.dart';
 
 /// 🎯 Global Navigator Key untuk FCM notification tap handling
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -31,6 +33,10 @@ void main() async {
 
   // 🆕 Register background message handler (MUST be before any other Firebase code)
   FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+
+  // 🆕 Initialize Local Notifications
+  await NotificationService.initialize();
+  debugPrint('✅ Main: Notification service initialized');
 
   // Load environment variables dari .env
   await dotenv.load(fileName: ".env");
