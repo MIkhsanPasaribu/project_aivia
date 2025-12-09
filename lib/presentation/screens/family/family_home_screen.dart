@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:project_aivia/core/constants/app_colors.dart';
 import 'package:project_aivia/presentation/screens/patient/profile_screen.dart';
 import 'package:project_aivia/presentation/screens/family/dashboard/family_dashboard_screen.dart';
+import 'package:project_aivia/presentation/screens/family/patient_tracking/patient_map_tab_wrapper.dart';
+import 'package:project_aivia/presentation/screens/family/activities/activities_tab_wrapper.dart';
+import 'package:project_aivia/presentation/screens/family/known_persons/known_persons_tab_wrapper.dart';
 
 /// Family Home Screen dengan Bottom Navigation
 /// Tabs: Dashboard, Lokasi Pasien, Kelola Aktivitas, Orang Dikenal, Profil
@@ -18,11 +21,11 @@ class _FamilyHomeScreenState extends ConsumerState<FamilyHomeScreen> {
 
   // Screens untuk setiap tab
   final List<Widget> _screens = [
-    const FamilyDashboardScreen(), // ✅ NEW: Dashboard with real-time patients
-    const FamilyLocationTab(), // Lokasi Pasien
-    const FamilyActivitiesTab(), // Kelola Aktivitas
-    const FamilyKnownPersonsTab(), // Orang Dikenal
-    const ProfileScreen(), // Profil
+    const FamilyDashboardScreen(), // ✅ Dashboard with real-time patients
+    const PatientMapTabWrapper(), // ✅ Lokasi Pasien dengan Map
+    const ActivitiesTabWrapper(), // ✅ Kelola Aktivitas
+    const KnownPersonsTabWrapper(), // ✅ Orang Dikenal
+    const ProfileScreen(), // ✅ Profil
   ];
 
   @override
@@ -88,130 +91,6 @@ class _FamilyHomeScreenState extends ConsumerState<FamilyHomeScreen> {
               icon: Icon(Icons.person_outline),
               activeIcon: Icon(Icons.person),
               label: 'Profil',
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Tab 2: Lokasi Pasien (Placeholder untuk Phase 2)
-class FamilyLocationTab extends StatelessWidget {
-  const FamilyLocationTab({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: const Text('Lokasi Pasien'),
-        automaticallyImplyLeading: false,
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.map_outlined, size: 100, color: AppColors.textTertiary),
-            const SizedBox(height: 24),
-            Text(
-              'Fitur Pelacakan Lokasi',
-              style: Theme.of(
-                context,
-              ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 12),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 48),
-              child: Text(
-                'Fitur ini akan tersedia di Phase 2\nAnda dapat melacak lokasi pasien secara real-time',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Tab 3: Kelola Aktivitas (Placeholder untuk Phase 1)
-class FamilyActivitiesTab extends StatelessWidget {
-  const FamilyActivitiesTab({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: const Text('Kelola Aktivitas'),
-        automaticallyImplyLeading: false,
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.event_note_outlined,
-              size: 100,
-              color: AppColors.textTertiary,
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'Kelola Aktivitas Pasien',
-              style: Theme.of(
-                context,
-              ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 12),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 48),
-              child: Text(
-                'Anda dapat menambah, mengedit, dan menghapus aktivitas untuk pasien yang Anda awasi',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Tab 4: Orang Dikenal (Placeholder untuk Phase 3)
-class FamilyKnownPersonsTab extends StatelessWidget {
-  const FamilyKnownPersonsTab({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: const Text('Orang Dikenal'),
-        automaticallyImplyLeading: false,
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.face_outlined, size: 100, color: AppColors.textTertiary),
-            const SizedBox(height: 24),
-            Text(
-              'Database Wajah',
-              style: Theme.of(
-                context,
-              ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 12),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 48),
-              child: Text(
-                'Fitur ini akan tersedia di Phase 3\nAnda dapat mendaftarkan wajah orang-orang terdekat untuk membantu pasien mengenali mereka',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
-              ),
             ),
           ],
         ),
