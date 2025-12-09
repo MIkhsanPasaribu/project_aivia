@@ -41,7 +41,9 @@ class KnownPerson {
             .map((e) => double.tryParse(e.trim()) ?? 0.0)
             .toList();
       } else if (embeddingData is List) {
-        embedding = embeddingData.map((e) => (e as num).toDouble()).toList();
+        embedding = embeddingData
+            .map((e) => (e as num?)?.toDouble() ?? 0.0)
+            .toList();
       }
     }
 
