@@ -59,7 +59,64 @@ class FaceRecognitionService {
           minFaceSize: 0.15, // 15% of image
           performanceMode: FaceDetectorMode.accurate,
         ),
-      );
+      ) {
+    // Ensure face detector is ready for use
+    _initializeFaceDetector();
+  }
+
+  /// Initialize FaceDetector (Google ML Kit)
+  ///
+  /// **CRITICAL**: Must be called before processImage()
+  /// This ensures internal state is properly set up.
+  Future<void> _initializeFaceDetector() async {
+    int retryCount = 0;
+    const maxRetries = 3;
+
+    while (retryCount < maxRetries) {
+      try {
+        // Create a minimal test image to force initialization
+        // This prevents "Bad state: failed precondition" error
+        final testImage = img.Image(width: 10, height: 10);
+        final testBytes = img.encodePng(testImage);
+        final tempFile = File(
+          '${Directory.systemTemp.path}/ml_kit_init_${DateTime.now().millisecondsSinceEpoch}.png',
+        );
+        await tempFile.writeAsBytes(testBytes);
+
+        final inputImage = InputImage.fromFile(tempFile);
+
+        // This call forces ML Kit to initialize internal state
+        await _faceDetector.processImage(inputImage);
+
+        // Clean up
+        try {
+          await tempFile.delete();
+        } catch (_) {
+          // Ignore cleanup errors
+        }
+
+        debugPrint(
+          '✅ FaceDetector initialized successfully (attempt ${retryCount + 1})',
+        );
+        return; // Success
+      } catch (e) {
+        retryCount++;
+        debugPrint(
+          '⚠️ FaceDetector initialization attempt $retryCount failed: $e',
+        );
+
+        if (retryCount < maxRetries) {
+          // Wait before retry (exponential backoff)
+          await Future.delayed(Duration(milliseconds: 100 * retryCount));
+        } else {
+          debugPrint(
+            '❌ FaceDetector initialization failed after $maxRetries attempts',
+          );
+          debugPrint('   Will attempt initialization on first real use');
+        }
+      }
+    }
+  }
 
   /// Initialize service: Load TFLite model
   ///
@@ -132,19 +189,73 @@ class FaceRecognitionService {
   /// Use case: Validate photo has exactly 1 face before adding to database
   Future<Result<List<Face>>> detectFacesInFile(File imageFile) async {
     try {
+      // Verify file exists
+      if (!await imageFile.exists()) {
+        debugPrint('❌ Image file not found: ${imageFile.path}');
+        return const ResultFailure(
+          ValidationFailure('File foto tidak ditemukan'),
+        );
+      }
+
       final inputImage = InputImage.fromFile(imageFile);
-      final faces = await _faceDetector.processImage(inputImage);
+
+      // Process with robust retry logic for initialization issues
+      List<Face> faces = [];
+      int retryCount = 0;
+      const maxRetries = 3;
+
+      while (retryCount < maxRetries) {
+        try {
+          faces = await _faceDetector.processImage(inputImage);
+          debugPrint(
+            '✅ Face detection successful: ${faces.length} face(s) found',
+          );
+          break; // Success
+        } catch (e) {
+          retryCount++;
+
+          // Check if it's a precondition error (initialization issue)
+          final errorStr = e.toString().toLowerCase();
+          final isPreconditionError =
+              errorStr.contains('precondition') ||
+              errorStr.contains('not initialized') ||
+              errorStr.contains('bad state');
+
+          if (isPreconditionError && retryCount < maxRetries) {
+            debugPrint(
+              '⚠️ FaceDetector initialization issue (attempt $retryCount), retrying...',
+            );
+            // Exponential backoff: 100ms, 200ms, 400ms
+            await Future.delayed(
+              Duration(milliseconds: 100 * (1 << (retryCount - 1))),
+            );
+          } else {
+            // Not a precondition error or max retries reached
+            debugPrint('❌ Face detection failed: $e');
+            rethrow;
+          }
+        }
+      }
 
       if (faces.isEmpty) {
         return const ResultFailure(
-          ValidationFailure('Tidak ada wajah terdeteksi dalam foto'),
+          ValidationFailure(
+            'Tidak ada wajah terdeteksi dalam foto. '
+            'Pastikan foto jelas dan pencahayaan cukup.',
+          ),
         );
       }
 
       return Success(faces);
-    } catch (e) {
+    } catch (e, stackTrace) {
+      debugPrint('❌ Face detection error: $e');
+      if (kDebugMode) {
+        debugPrint('   Stack trace: $stackTrace');
+      }
       return ResultFailure(
-        ServerFailure('Gagal deteksi wajah: ${e.toString()}'),
+        ServerFailure(
+          'Gagal deteksi wajah. Coba ambil foto lagi.\nError: ${e.toString()}',
+        ),
       );
     }
   }
@@ -152,15 +263,38 @@ class FaceRecognitionService {
   /// Detect faces in camera frame (for real-time preview)
   ///
   /// Returns: List of faces (can be empty)
-  /// Use case: Show bounding box overlay di camera preview
+  /// Use case: Show bounding box overlay di camera preview (DEPRECATED - use photo capture instead)
+  ///
+  /// **Note**: This method is kept for backward compatibility but photo capture
+  /// is now preferred for better user experience and reliability.
   Future<List<Face>> detectFacesInFrame(CameraImage image) async {
     try {
       final inputImage = _convertCameraImageToInputImage(image);
-      if (inputImage == null) return [];
+      if (inputImage == null) {
+        debugPrint('⚠️ Failed to convert camera image to InputImage');
+        return [];
+      }
 
-      return await _faceDetector.processImage(inputImage);
+      // Safe call with graceful error handling
+      try {
+        final faces = await _faceDetector.processImage(inputImage);
+        return faces;
+      } catch (stateError) {
+        // Handle initialization issues gracefully - don't crash, just skip frame
+        final errorStr = stateError.toString().toLowerCase();
+        if (errorStr.contains('precondition') ||
+            errorStr.contains('not initialized') ||
+            errorStr.contains('bad state')) {
+          // Silently skip - this is expected during warm-up
+          return [];
+        }
+        // Other errors - log but don't crash
+        debugPrint('⚠️ Frame detection error: $stateError');
+        return [];
+      }
     } catch (e) {
-      debugPrint('⚠️ Frame detection error: $e');
+      // Catch-all for unexpected errors
+      debugPrint('⚠️ Unexpected frame detection error: $e');
       return [];
     }
   }

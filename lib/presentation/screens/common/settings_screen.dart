@@ -9,6 +9,7 @@ import 'package:project_aivia/core/utils/permission_helper.dart';
 import 'package:project_aivia/presentation/screens/common/help_screen.dart';
 import 'package:project_aivia/presentation/providers/notification_settings_provider.dart';
 import 'package:project_aivia/presentation/providers/theme_provider.dart';
+import 'package:project_aivia/presentation/providers/location_service_provider.dart';
 
 /// Settings Screen - Halaman pengaturan aplikasi
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -18,23 +19,66 @@ class SettingsScreen extends ConsumerStatefulWidget {
   ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
 }
 
-class _SettingsScreenState extends ConsumerState<SettingsScreen> {
+class _SettingsScreenState extends ConsumerState<SettingsScreen>
+    with WidgetsBindingObserver {
   bool _isLocationPermissionGranted = false;
   bool _isLoadingPermission = true;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _checkLocationPermission();
   }
 
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    // Refresh permission status when app resumes
+    if (state == AppLifecycleState.resumed) {
+      _checkLocationPermission();
+    }
+  }
+
   Future<void> _checkLocationPermission() async {
-    final status = await Permission.location.status;
-    if (mounted) {
-      setState(() {
-        _isLocationPermissionGranted = status.isGranted;
-        _isLoadingPermission = false;
-      });
+    try {
+      // Check foreground permission
+      final foregroundStatus = await Permission.location.status;
+
+      // Check background permission (Android 10+)
+      final backgroundStatus = await Permission.locationAlways.status;
+
+      // Check if location service is actually enabled on device
+      final locationService = ref.read(locationServiceProvider);
+      final isTracking = locationService.isTracking;
+
+      if (mounted) {
+        setState(() {
+          // Consider granted only if foreground permission is given
+          // Background is optional but tracking requires it for full functionality
+          _isLocationPermissionGranted = foregroundStatus.isGranted;
+          _isLoadingPermission = false;
+        });
+
+        // Log detailed status for debugging
+        debugPrint('📍 Permission Status:');
+        debugPrint('   Foreground: ${foregroundStatus.name}');
+        debugPrint('   Background: ${backgroundStatus.name}');
+        debugPrint('   Tracking: $isTracking');
+      }
+    } catch (e) {
+      debugPrint('❌ Error checking location permission: $e');
+      if (mounted) {
+        setState(() {
+          _isLoadingPermission = false;
+        });
+      }
     }
   }
 

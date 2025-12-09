@@ -403,7 +403,12 @@ class _AddKnownPersonScreenState extends ConsumerState<AddKnownPersonScreen> {
         maxHeight: 1024,
       );
 
-      if (pickedFile == null) return;
+      if (pickedFile == null) {
+        debugPrint('ℹ️ User cancelled photo selection');
+        return;
+      }
+
+      debugPrint('📷 Photo selected: ${pickedFile.path}');
 
       setState(() {
         _selectedImage = File(pickedFile.path);
@@ -411,9 +416,42 @@ class _AddKnownPersonScreenState extends ConsumerState<AddKnownPersonScreen> {
         _detectedFaceCount = null;
       });
 
-      // Detect faces untuk validation
+      // Detect faces untuk validation dengan retry logic yang lebih robust
       final faceService = ref.read(faceRecognitionServiceProvider);
-      final faceCount = await faceService.getFaceCount(_selectedImage!);
+      int faceCount = 0;
+      int retryCount = 0;
+      const maxRetries = 3;
+
+      while (retryCount < maxRetries) {
+        try {
+          debugPrint('🔍 Detecting faces (attempt ${retryCount + 1})...');
+          faceCount = await faceService.getFaceCount(_selectedImage!);
+          debugPrint('✅ Face detection successful: $faceCount face(s)');
+          break; // Success
+        } catch (e) {
+          retryCount++;
+          debugPrint('⚠️ Face detection failed (attempt $retryCount): $e');
+
+          if (retryCount < maxRetries) {
+            // Wait before retry with exponential backoff
+            final delayMs = 500 * retryCount;
+            debugPrint('   Retrying in ${delayMs}ms...');
+            await Future.delayed(Duration(milliseconds: delayMs));
+          } else {
+            // Max retries reached
+            setState(() {
+              _isProcessing = false;
+              _selectedImage = null; // Clear failed image
+            });
+            _showError(
+              'Gagal mendeteksi wajah setelah $maxRetries percobaan.\n'
+              'Pastikan foto jelas dan pencahayaan cukup.\n\n'
+              'Detail: ${e.toString()}',
+            );
+            return;
+          }
+        }
+      }
 
       setState(() {
         _detectedFaceCount = faceCount;
@@ -421,15 +459,27 @@ class _AddKnownPersonScreenState extends ConsumerState<AddKnownPersonScreen> {
       });
 
       if (faceCount == 0) {
-        _showError('Tidak ada wajah terdeteksi dalam foto. Coba foto lagi.');
+        _showError(
+          'Tidak ada wajah terdeteksi dalam foto.\n'
+          'Pastikan wajah terlihat jelas dan coba lagi.',
+        );
       } else if (faceCount > 1) {
         _showError(
-          'Terdeteksi $faceCount wajah. Pastikan hanya ada 1 orang dalam foto.',
+          'Terdeteksi $faceCount wajah dalam foto.\n'
+          'Pastikan hanya ada 1 orang dan coba lagi.',
         );
+      } else {
+        debugPrint('✅ Photo validation successful: 1 face detected');
       }
     } catch (e) {
-      setState(() => _isProcessing = false);
-      _showError('Gagal mengambil foto: ${e.toString()}');
+      debugPrint('❌ Image picker error: $e');
+      setState(() {
+        _isProcessing = false;
+        _selectedImage = null;
+      });
+      _showError(
+        'Gagal mengambil foto.\nSilakan coba lagi.\n\nError: ${e.toString()}',
+      );
     }
   }
 

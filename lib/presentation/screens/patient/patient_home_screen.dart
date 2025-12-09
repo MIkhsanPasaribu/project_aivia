@@ -19,13 +19,16 @@ class PatientHomeScreen extends ConsumerStatefulWidget {
   ConsumerState<PatientHomeScreen> createState() => _PatientHomeScreenState();
 }
 
-class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
+class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen>
+    with WidgetsBindingObserver {
   int _selectedIndex = 0;
   bool _isInitializingTracking = false;
+  bool _trackingWasActive = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
 
     // Initialize location tracking setelah build pertama
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -35,9 +38,35 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     // Stop tracking saat screen di-dispose
     _stopLocationTracking();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+
+    final locationService = ref.read(locationServiceProvider);
+
+    if (state == AppLifecycleState.paused) {
+      // Save tracking state when app goes to background
+      _trackingWasActive = locationService.isTracking;
+      debugPrint('📍 App paused. Tracking was: $_trackingWasActive');
+    } else if (state == AppLifecycleState.resumed) {
+      // Resume tracking if it was active before
+      debugPrint('📍 App resumed. Checking tracking status...');
+
+      if (_trackingWasActive && !locationService.isTracking) {
+        debugPrint('🔄 Auto-resuming location tracking...');
+        _initializeLocationTracking();
+      } else if (locationService.isTracking) {
+        debugPrint('✅ Tracking still active');
+      } else {
+        debugPrint('ℹ️ Tracking was not active');
+      }
+    }
   }
 
   void _onItemTapped(int index) {
@@ -107,6 +136,14 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
 
       // STEP 4: Start tracking dengan balanced mode
       debugPrint('📍 Starting location tracking...');
+
+      // Check if already tracking to avoid duplicate streams
+      if (locationService.isTracking) {
+        debugPrint('ℹ️ Location tracking already active');
+        ref.read(isTrackingProvider.notifier).state = true;
+        return;
+      }
+
       final trackResult = await locationService.startTracking(
         userId,
         mode: TrackingMode.balanced,
@@ -114,7 +151,11 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
 
       if (trackResult.isSuccess) {
         debugPrint('✅ Location tracking started successfully');
+        debugPrint('   User ID: $userId');
+        debugPrint('   Mode: ${TrackingMode.balanced.displayName}');
+
         ref.read(isTrackingProvider.notifier).state = true;
+        _trackingWasActive = true; // Mark as active for lifecycle management
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -127,6 +168,17 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
         }
       } else {
         debugPrint('❌ Failed to start tracking: ${trackResult.failure}');
+        _trackingWasActive = false;
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('❌ Gagal memulai pelacakan lokasi'),
+              duration: Duration(seconds: 3),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
       }
     } catch (e) {
       debugPrint('❌ Error initializing location tracking: $e');

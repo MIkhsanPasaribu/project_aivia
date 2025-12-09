@@ -106,17 +106,24 @@ class _RecognizeFaceScreenState extends ConsumerState<RecognizeFaceScreen>
 
       if (!mounted) return;
 
-      // 4. Start real-time face detection
-      _startImageStream();
-
       setState(() {
         _isCameraInitialized = true;
         _errorMessage = null;
       });
+
+      // 4. Start real-time face detection for preview overlay
+      // Add delay to ensure camera is fully ready
+      await Future.delayed(const Duration(milliseconds: 300));
+      if (mounted &&
+          _cameraController != null &&
+          _cameraController!.value.isInitialized) {
+        _startImageStream();
+      }
     } catch (e) {
-      debugPrint('?????? Camera initialization error: $e');
+      debugPrint('❌ Camera initialization error: $e');
       setState(() {
-        _errorMessage = '${AppStrings.cameraInitError}\n${e.toString()}';
+        _errorMessage =
+            '${AppStrings.cameraInitError}\nSilakan coba lagi.\n\nDetail: ${e.toString()}';
       });
     }
   }
@@ -127,27 +134,48 @@ class _RecognizeFaceScreenState extends ConsumerState<RecognizeFaceScreen>
 
   void _startImageStream() {
     if (_cameraController == null || !_cameraController!.value.isInitialized) {
+      debugPrint('⚠️ Cannot start image stream: camera not initialized');
       return;
     }
 
-    _cameraController!.startImageStream((CameraImage image) async {
-      if (_isDetecting || _isProcessing) return;
-      _isDetecting = true;
+    try {
+      _cameraController!.startImageStream((CameraImage image) async {
+        if (_isDetecting || _isProcessing) return;
+        _isDetecting = true;
 
-      try {
-        final faces = await ref
-            .read(faceRecognitionServiceProvider)
-            .detectFacesInFrame(image);
+        try {
+          final faces = await ref
+              .read(faceRecognitionServiceProvider)
+              .detectFacesInFrame(image);
 
-        if (mounted) {
-          setState(() => _detectedFaces = faces);
+          if (mounted) {
+            setState(() {
+              _detectedFaces = faces;
+              // Clear error message on successful detection
+              if (_errorMessage != null && faces.isNotEmpty) {
+                _errorMessage = null;
+              }
+            });
+          }
+        } catch (e) {
+          debugPrint('⚠️ Face detection error in frame: $e');
+          // Continue processing next frames even if one fails
+          // Don't update error message here - would flicker too much
+        } finally {
+          _isDetecting = false;
         }
-      } catch (e) {
-        debugPrint('Face detection error: $e');
-      } finally {
-        _isDetecting = false;
+      });
+
+      debugPrint('✅ Image stream started successfully');
+    } catch (e) {
+      debugPrint('❌ Failed to start image stream: $e');
+      if (mounted) {
+        setState(() {
+          _errorMessage =
+              'Gagal memulai kamera.\nSilakan tutup dan buka kembali layar ini.';
+        });
       }
-    });
+    }
   }
 
   void _stopImageStream() {
