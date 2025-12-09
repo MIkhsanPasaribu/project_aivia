@@ -25,7 +25,7 @@ class Location {
       latitude: _parseCoordinate(json, 'latitude'),
       longitude: _parseCoordinate(json, 'longitude'),
       accuracy: json['accuracy'] != null
-          ? (json['accuracy'] as num).toDouble()
+          ? (json['accuracy'] as num?)?.toDouble()
           : null,
       timestamp: DateTime.parse(json['timestamp'] as String),
     );
@@ -35,7 +35,7 @@ class Location {
   static double _parseCoordinate(Map<String, dynamic> json, String field) {
     // Jika ada field langsung (untuk insert)
     if (json.containsKey(field)) {
-      return (json[field] as num).toDouble();
+      return (json[field] as num?)?.toDouble() ?? 0.0;
     }
 
     // Jika dari PostGIS POINT format: "POINT(longitude latitude)"
