@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:project_aivia/core/constants/app_strings.dart';
 import 'package:project_aivia/presentation/providers/auth_provider.dart';
+import 'package:project_aivia/presentation/providers/location_service_provider.dart';
 
 /// Helper class untuk optimasi logout process
 /// Mengatasi masalah logout yang lambat dengan:
 /// 1. Timeout handling
 /// 2. Clear providers
 /// 3. Single loading indicator
+/// 4. ✅ Stop location tracking
 class LogoutHelper {
   /// Logout dengan timeout dan error handling
   static Future<void> performLogout({
@@ -40,7 +42,18 @@ class LogoutHelper {
     );
 
     try {
-      // Call logout dengan timeout
+      // ✅ STEP 1: Stop location tracking sebelum logout
+      try {
+        final locationService = ref.read(locationServiceProvider);
+        await locationService.stopTracking();
+        ref.read(isTrackingProvider.notifier).state = false;
+        debugPrint('✅ Location tracking stopped before logout');
+      } catch (e) {
+        debugPrint('⚠️ Error stopping location tracking: $e');
+        // Continue with logout even if stop tracking fails
+      }
+
+      // STEP 2: Call logout dengan timeout
       final authRepository = ref.read(authRepositoryProvider);
       final result = await authRepository.signOut().timeout(
         timeout,
@@ -60,6 +73,7 @@ class LogoutHelper {
           // Clear all providers
           ref.invalidate(currentUserProfileProvider);
           ref.invalidate(authStateChangesProvider);
+          ref.invalidate(isTrackingProvider);
 
           // Navigate to login
           Navigator.of(
