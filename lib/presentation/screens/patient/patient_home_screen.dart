@@ -4,6 +4,7 @@ import 'package:project_aivia/core/constants/app_strings.dart';
 import 'package:project_aivia/core/constants/app_dimensions.dart';
 import 'package:project_aivia/presentation/screens/patient/activity/activity_list_screen.dart';
 import 'package:project_aivia/presentation/screens/patient/profile_screen.dart';
+import 'package:project_aivia/presentation/screens/patient/face_recognition/recognize_face_screen.dart';
 import 'package:project_aivia/presentation/widgets/emergency/emergency_button.dart';
 import 'package:project_aivia/presentation/providers/auth_provider.dart';
 
@@ -18,15 +19,6 @@ class PatientHomeScreen extends ConsumerStatefulWidget {
 class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
   int _selectedIndex = 0;
 
-  // List of screens untuk bottom navigation
-  final List<Widget> _screens = [
-    const ActivityListScreen(),
-    const Center(
-      child: Text('Kenali Wajah\n(Coming Soon)', textAlign: TextAlign.center),
-    ),
-    const ProfileScreen(),
-  ];
-
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
@@ -35,9 +27,20 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Get current user ID for emergency button
+    // Get current user ID for emergency button and recognize face
     final currentUserAsync = ref.watch(currentUserProfileProvider);
     final userId = currentUserAsync.value?.id ?? '';
+
+    // List of screens untuk bottom navigation
+    final List<Widget> screens = [
+      const ActivityListScreen(),
+      userId.isNotEmpty
+          ? RecognizeFaceScreen(patientId: userId)
+          : const Center(
+              child: Text('Loading...', textAlign: TextAlign.center),
+            ),
+      const ProfileScreen(),
+    ];
 
     return Scaffold(
       body: AnimatedSwitcher(
@@ -48,7 +51,7 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
         child: IndexedStack(
           key: ValueKey<int>(_selectedIndex),
           index: _selectedIndex,
-          children: _screens,
+          children: screens,
         ),
       ),
       floatingActionButton: userId.isNotEmpty
