@@ -60,6 +60,11 @@ dependencies:
   flutter_local_notifications: ^17.2.3
   device_info_plus: ^10.1.2
 
+  # Face Recognition ML (Phase 3 - 100% FREE!)
+  google_mlkit_face_detection: ^0.11.0 # On-device face detection
+  tflite_flutter: ^0.10.4 # TensorFlow Lite runtime
+  camera: ^0.11.0+2 # Camera access
+
   # UI & Utilities
   go_router: ^16.2.4
   intl: ^0.20.2
