@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:project_aivia/core/constants/app_colors.dart';
@@ -10,6 +11,9 @@ import 'package:project_aivia/presentation/screens/common/help_screen.dart';
 import 'package:project_aivia/presentation/providers/notification_settings_provider.dart';
 import 'package:project_aivia/presentation/providers/theme_provider.dart';
 import 'package:project_aivia/presentation/providers/location_service_provider.dart';
+import 'package:project_aivia/presentation/providers/location_provider.dart';
+import 'package:project_aivia/presentation/providers/auth_provider.dart';
+import 'package:intl/intl.dart';
 
 /// Settings Screen - Halaman pengaturan aplikasi
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -204,6 +208,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
               _showPrivacyPolicyDialog(context);
             },
           ),
+
+          const Divider(height: 32),
+
+          // Section: Lokasi Saya (for Patient users)
+          _buildSectionHeader(context, 'Lokasi Saya'),
+          _buildCurrentLocationCard(context, ref),
 
           const Divider(height: 32),
 
@@ -582,6 +592,316 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
               ),
           ],
         ),
+      ),
+    );
+  }
+
+  /// Build current location display card
+  Widget _buildCurrentLocationCard(BuildContext context, WidgetRef ref) {
+    // Get current user ID
+    final currentUserAsync = ref.watch(authStateChangesProvider);
+
+    return currentUserAsync.when(
+      data: (user) {
+        if (user == null) {
+          return const SizedBox.shrink();
+        }
+
+        // Watch last location for current user
+        final lastLocationAsync = ref.watch(lastLocationProvider(user.id));
+
+        return lastLocationAsync.when(
+          data: (location) {
+            if (location == null) {
+              return _buildNoLocationCard(context);
+            }
+
+            // Format timestamp
+            final timeAgo = _formatTimeAgo(location.timestamp);
+            final formattedDate = DateFormat(
+              'dd MMM yyyy, HH:mm',
+            ).format(location.timestamp);
+
+            return Card(
+              margin: const EdgeInsets.symmetric(
+                horizontal: AppDimensions.paddingM,
+                vertical: AppDimensions.paddingS,
+              ),
+              elevation: 1,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppDimensions.radiusL),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(AppDimensions.paddingM),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Header
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(AppDimensions.paddingS),
+                          decoration: BoxDecoration(
+                            color: AppColors.secondary.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(
+                              AppDimensions.radiusM,
+                            ),
+                          ),
+                          child: const Icon(
+                            Icons.my_location,
+                            color: AppColors.secondary,
+                            size: 24,
+                          ),
+                        ),
+                        const SizedBox(width: AppDimensions.paddingM),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Lokasi Terakhir',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              Text(
+                                timeAgo,
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        // Copy button
+                        IconButton(
+                          onPressed: () => _copyLocationToClipboard(
+                            context,
+                            location.formattedLocation,
+                          ),
+                          icon: const Icon(Icons.copy, size: 20),
+                          tooltip: 'Salin koordinat',
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: AppDimensions.paddingM),
+                    const Divider(height: 1),
+                    const SizedBox(height: AppDimensions.paddingM),
+
+                    // Coordinates
+                    _buildLocationInfoRow(
+                      context,
+                      icon: Icons.place,
+                      label: 'Koordinat',
+                      value: location.formattedLocation,
+                    ),
+                    const SizedBox(height: AppDimensions.paddingS),
+
+                    // Accuracy
+                    _buildLocationInfoRow(
+                      context,
+                      icon: Icons.gps_fixed,
+                      label: 'Akurasi',
+                      value: location.accuracyLabel,
+                    ),
+                    const SizedBox(height: AppDimensions.paddingS),
+
+                    // Timestamp
+                    _buildLocationInfoRow(
+                      context,
+                      icon: Icons.access_time,
+                      label: 'Waktu',
+                      value: formattedDate,
+                    ),
+
+                    // Info message
+                    const SizedBox(height: AppDimensions.paddingM),
+                    Container(
+                      padding: const EdgeInsets.all(AppDimensions.paddingS),
+                      decoration: BoxDecoration(
+                        color: AppColors.info.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(
+                          AppDimensions.radiusM,
+                        ),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Icon(
+                            Icons.info_outline,
+                            size: 16,
+                            color: AppColors.info,
+                          ),
+                          const SizedBox(width: AppDimensions.paddingS),
+                          Expanded(
+                            child: Text(
+                              'Lokasi ini dapat digunakan keluarga untuk menemukan Anda jika pelacakan bermasalah',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+          loading: () => Card(
+            margin: const EdgeInsets.symmetric(
+              horizontal: AppDimensions.paddingM,
+              vertical: AppDimensions.paddingS,
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(AppDimensions.paddingL),
+              child: Center(
+                child: Column(
+                  children: [
+                    const CircularProgressIndicator(),
+                    const SizedBox(height: AppDimensions.paddingM),
+                    Text(
+                      'Memuat lokasi...',
+                      style: TextStyle(color: AppColors.textSecondary),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          error: (error, stack) => Card(
+            margin: const EdgeInsets.symmetric(
+              horizontal: AppDimensions.paddingM,
+              vertical: AppDimensions.paddingS,
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(AppDimensions.paddingM),
+              child: Row(
+                children: [
+                  Icon(Icons.error_outline, color: AppColors.error),
+                  const SizedBox(width: AppDimensions.paddingM),
+                  Expanded(
+                    child: Text(
+                      'Gagal memuat lokasi',
+                      style: TextStyle(color: AppColors.error),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+      loading: () => const SizedBox.shrink(),
+      error: (error, stack) => const SizedBox.shrink(),
+    );
+  }
+
+  /// Build no location card
+  Widget _buildNoLocationCard(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.symmetric(
+        horizontal: AppDimensions.paddingM,
+        vertical: AppDimensions.paddingS,
+      ),
+      elevation: 1,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppDimensions.radiusL),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppDimensions.paddingL),
+        child: Column(
+          children: [
+            Icon(
+              Icons.location_off,
+              size: 48,
+              color: AppColors.textTertiary.withValues(alpha: 0.5),
+            ),
+            const SizedBox(height: AppDimensions.paddingM),
+            const Text(
+              'Belum Ada Data Lokasi',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: AppDimensions.paddingS),
+            Text(
+              'Lokasi Anda akan muncul di sini setelah pelacakan diaktifkan',
+              style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Build location info row
+  Widget _buildLocationInfoRow(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required String value,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 18, color: AppColors.textSecondary),
+        const SizedBox(width: AppDimensions.paddingS),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Format time ago
+  String _formatTimeAgo(DateTime timestamp) {
+    final now = DateTime.now();
+    final diff = now.difference(timestamp);
+
+    if (diff.inMinutes < 1) {
+      return 'Baru saja';
+    } else if (diff.inMinutes < 60) {
+      return '${diff.inMinutes} menit yang lalu';
+    } else if (diff.inHours < 24) {
+      return '${diff.inHours} jam yang lalu';
+    } else if (diff.inDays == 1) {
+      return 'Kemarin';
+    } else {
+      return '${diff.inDays} hari yang lalu';
+    }
+  }
+
+  /// Copy location to clipboard
+  void _copyLocationToClipboard(BuildContext context, String coordinates) {
+    Clipboard.setData(ClipboardData(text: coordinates));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('📋 Koordinat disalin ke clipboard'),
+        duration: Duration(seconds: 2),
       ),
     );
   }

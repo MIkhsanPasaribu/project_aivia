@@ -42,6 +42,12 @@ class FaceRecognitionService {
   /// Input size detected from model (112 or 160)
   int _inputSize = 112;
 
+  /// Rate limiting for frame processing
+  DateTime? _lastFrameProcessTime;
+  static const _minFrameInterval = Duration(
+    milliseconds: 500,
+  ); // Process max 2 frames/sec
+
   // Singleton pattern
   static FaceRecognitionService? _instance;
 
@@ -270,9 +276,20 @@ class FaceRecognitionService {
   /// is now preferred for better user experience and reliability.
   Future<List<Face>> detectFacesInFrame(CameraImage image) async {
     try {
+      // Rate limiting - skip frames if processing too fast
+      final now = DateTime.now();
+      if (_lastFrameProcessTime != null) {
+        final timeSinceLastFrame = now.difference(_lastFrameProcessTime!);
+        if (timeSinceLastFrame < _minFrameInterval) {
+          // Skip this frame to reduce load
+          return [];
+        }
+      }
+      _lastFrameProcessTime = now;
+
       final inputImage = _convertCameraImageToInputImage(image);
       if (inputImage == null) {
-        debugPrint('⚠️ Failed to convert camera image to InputImage');
+        // Silent skip - logged in converter
         return [];
       }
 
@@ -290,12 +307,12 @@ class FaceRecognitionService {
           return [];
         }
         // Other errors - log but don't crash
-        debugPrint('⚠️ Frame detection error: $stateError');
+        debugPrint('! Frame detection error: $stateError');
         return [];
       }
     } catch (e) {
       // Catch-all for unexpected errors
-      debugPrint('⚠️ Unexpected frame detection error: $e');
+      debugPrint('! Unexpected frame detection error: $e');
       return [];
     }
   }
@@ -303,34 +320,75 @@ class FaceRecognitionService {
   /// Convert CameraImage to InputImage for ML Kit
   InputImage? _convertCameraImageToInputImage(CameraImage image) {
     try {
-      // ML Kit requires specific format
+      // Validate image dimensions - ML Kit requires minimum 32x32
+      if (image.width < 32 || image.height < 32) {
+        debugPrint('⚠️ Image too small: ${image.width}x${image.height}');
+        return null;
+      }
+
+      // Validate planes exist
+      if (image.planes.isEmpty) {
+        debugPrint('⚠️ No image planes available');
+        return null;
+      }
+
+      // Get image format
+      InputImageFormat? inputImageFormat;
+      switch (image.format.group) {
+        case ImageFormatGroup.yuv420:
+          inputImageFormat = InputImageFormat.yuv420;
+          break;
+        case ImageFormatGroup.nv21:
+          inputImageFormat = InputImageFormat.nv21;
+          break;
+        case ImageFormatGroup.bgra8888:
+          inputImageFormat = InputImageFormat.bgra8888;
+          break;
+        default:
+          debugPrint('⚠️ Unsupported image format: ${image.format.group}');
+          return null;
+      }
+
+      // For YUV420/NV21, use plane bytes directly (more efficient)
+      if (inputImageFormat == InputImageFormat.yuv420 ||
+          inputImageFormat == InputImageFormat.nv21) {
+        // Validate bytesPerRow
+        final bytesPerRow = image.planes.first.bytesPerRow;
+        if (bytesPerRow < image.width) {
+          debugPrint('⚠️ Invalid bytesPerRow: $bytesPerRow < ${image.width}');
+          return null;
+        }
+
+        // Use first plane bytes directly (Y plane for YUV420)
+        return InputImage.fromBytes(
+          bytes: image.planes.first.bytes,
+          metadata: InputImageMetadata(
+            size: Size(image.width.toDouble(), image.height.toDouble()),
+            rotation: InputImageRotation.rotation0deg,
+            format: inputImageFormat,
+            bytesPerRow: bytesPerRow,
+          ),
+        );
+      }
+
+      // For other formats, concatenate all plane bytes
       final WriteBuffer allBytes = WriteBuffer();
       for (final Plane plane in image.planes) {
         allBytes.putUint8List(plane.bytes);
       }
       final bytes = allBytes.done().buffer.asUint8List();
 
-      final Size imageSize = Size(
-        image.width.toDouble(), // Safe: width is always non-null
-        image.height.toDouble(), // Safe: height is always non-null
-      );
-
-      const InputImageRotation imageRotation = InputImageRotation.rotation0deg;
-
-      final InputImageFormat inputImageFormat =
-          InputImageFormat.yuv420; // Android default
-
       return InputImage.fromBytes(
         bytes: bytes,
         metadata: InputImageMetadata(
-          size: imageSize,
-          rotation: imageRotation,
+          size: Size(image.width.toDouble(), image.height.toDouble()),
+          rotation: InputImageRotation.rotation0deg,
           format: inputImageFormat,
           bytesPerRow: image.planes.first.bytesPerRow,
         ),
       );
     } catch (e) {
-      debugPrint('Error converting camera image: $e');
+      debugPrint('❌ Error converting camera image: $e');
       return null;
     }
   }
