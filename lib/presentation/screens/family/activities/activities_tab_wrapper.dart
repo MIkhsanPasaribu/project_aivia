@@ -38,7 +38,8 @@ class ActivitiesTabWrapper extends ConsumerWidget {
         }
 
         // Jika multiple patients, tampilkan selector
-        // TODO: Implement patient selector
+        // Patient selector: For families with multiple patients
+        // Implementation in Sprint 4 if needed (currently single patient per family)
         // For now, default to first patient
         final patient = linksWithProfiles.first.patientProfile!;
         return ManageActivitiesScreen(
