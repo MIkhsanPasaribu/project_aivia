@@ -123,4 +123,36 @@ class AppStrings {
   static const String emergencyButton = 'Tombol Darurat';
   static const String emergencyConfirm =
       'Tekan lama untuk mengirim peringatan darurat';
+
+  // Face Recognition - Patient
+  static const String recognizeFaceTitle = 'Kenali Wajah';
+  static const String recognizeFaceInstruction =
+      'Arahkan kamera ke wajah seseorang';
+  static const String faceDetected = 'wajah terdeteksi';
+  static const String noFaceDetected = 'Tidak ada wajah terdeteksi';
+  static const String captureButton = 'Kenali Wajah';
+  static const String processing = 'Memproses...';
+
+  // Recognition Result
+  static const String recognitionResultTitle = 'Hasil Pengenalan';
+  static const String faceRecognized = 'Wajah Dikenali!';
+  static const String faceNotRecognized = 'Wajah Tidak Dikenali';
+  static const String recognizedPerson = 'Ini adalah';
+  static const String similarity = 'Tingkat Kepercayaan';
+  static const String recognizedAt = 'Dikenali pada';
+  static const String tryAgain = 'Coba Lagi';
+  static const String recognizeAgain = 'Kenali Lagi';
+  static const String viewAllKnownPersons = 'Lihat Semua Orang Dikenal';
+  static const String notRecognizedMessage =
+      'Maaf, wajah ini tidak ada dalam database orang dikenal.';
+  static const String notRecognizedSuggestion =
+      'Minta keluarga untuk menambahkan orang ini ke dalam database.';
+
+  // Camera Errors
+  static const String cameraPermissionDenied =
+      'Izin kamera ditolak. Aktifkan di pengaturan.';
+  static const String cameraInitError =
+      'Gagal menginisialisasi kamera. Silakan coba lagi.';
+  static const String noCameraAvailable =
+      'Tidak ada kamera tersedia di perangkat ini';
 }
