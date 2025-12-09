@@ -71,7 +71,7 @@ class GeofenceEvent {
       eventType: _parseEventType(json['event_type'] as String),
       patientId: json['patient_id'] as String,
       distanceFromCenter: json['distance_from_center'] != null
-          ? (json['distance_from_center'] as num).toDouble()
+          ? (json['distance_from_center'] as num?)?.toDouble()
           : null,
       notified: json['notified'] as bool? ?? false,
       notifiedAt: json['notified_at'] != null
