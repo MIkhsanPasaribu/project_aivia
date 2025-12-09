@@ -140,6 +140,21 @@ class ActivityController extends StateNotifier<AsyncValue<void>> {
     return result;
   }
 
+  /// Mark activity as incomplete
+  Future<Result<Activity>> uncompleteActivity(String activityId) async {
+    state = const AsyncValue.loading();
+
+    final result = await _activityRepository.uncompleteActivity(activityId);
+
+    result.fold(
+      onSuccess: (_) => state = const AsyncValue.data(null),
+      onFailure: (failure) =>
+          state = AsyncValue.error(failure.message, StackTrace.current),
+    );
+
+    return result;
+  }
+
   /// Get single activity by ID
   Future<Result<Activity>> getActivity(String activityId) async {
     return await _activityRepository.getActivity(activityId);
