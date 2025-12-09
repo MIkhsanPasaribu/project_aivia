@@ -19,6 +19,9 @@ class DateFormatter {
     return DateFormat('HH:mm').format(time);
   }
 
+  /// Alias untuk formatTime (backward compatibility)
+  static String formatTimeOnly(DateTime time) => formatTime(time);
+
   /// Format: 12 Jan 2024, 14:30
   static String formatDateTime(DateTime dateTime) {
     return '${formatDate(dateTime)}, ${formatTime(dateTime)}';
