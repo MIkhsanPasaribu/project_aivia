@@ -5,7 +5,7 @@ import 'package:project_aivia/core/constants/app_dimensions.dart';
 import 'package:project_aivia/presentation/screens/patient/activity/activity_list_screen.dart';
 import 'package:project_aivia/presentation/screens/patient/profile_screen.dart';
 import 'package:project_aivia/presentation/screens/patient/face_recognition/recognize_face_screen.dart';
-import 'package:project_aivia/presentation/widgets/emergency/emergency_button.dart';
+import 'package:project_aivia/presentation/widgets/emergency/draggable_emergency_button.dart';
 import 'package:project_aivia/presentation/providers/auth_provider.dart';
 
 /// Patient Home Screen dengan Bottom Navigation
@@ -42,60 +42,65 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
       const ProfileScreen(),
     ];
 
-    return Scaffold(
-      body: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 300),
-        transitionBuilder: (child, animation) {
-          return FadeTransition(opacity: animation, child: child);
-        },
-        child: IndexedStack(
-          key: ValueKey<int>(_selectedIndex),
-          index: _selectedIndex,
-          children: screens,
+    return Stack(
+      children: [
+        // Main scaffold dengan bottom navigation
+        Scaffold(
+          body: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 300),
+            transitionBuilder: (child, animation) {
+              return FadeTransition(opacity: animation, child: child);
+            },
+            child: IndexedStack(
+              key: ValueKey<int>(_selectedIndex),
+              index: _selectedIndex,
+              children: screens,
+            ),
+          ),
+          bottomNavigationBar: Container(
+            decoration: BoxDecoration(
+              boxShadow: [
+                BoxShadow(
+                  color: Theme.of(context).shadowColor.withValues(alpha: 0.1),
+                  blurRadius: AppDimensions.elevationM,
+                  offset: const Offset(0, -2),
+                ),
+              ],
+            ),
+            child: BottomNavigationBar(
+              currentIndex: _selectedIndex,
+              onTap: _onItemTapped,
+              items: const [
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.home_outlined, size: AppDimensions.iconL),
+                  activeIcon: Icon(Icons.home, size: AppDimensions.iconL),
+                  label: AppStrings.navHome,
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.face_outlined, size: AppDimensions.iconL),
+                  activeIcon: Icon(Icons.face, size: AppDimensions.iconL),
+                  label: AppStrings.navRecognizeFace,
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.person_outlined, size: AppDimensions.iconL),
+                  activeIcon: Icon(Icons.person, size: AppDimensions.iconL),
+                  label: AppStrings.navProfile,
+                ),
+              ],
+            ),
+          ),
         ),
-      ),
-      floatingActionButton: userId.isNotEmpty
-          ? EmergencyButton(
-              patientId: userId,
-              onAlertCreated: () {
-                // Optional: Navigate to specific screen after alert created
-                // atau refresh data jika diperlukan
-              },
-            )
-          : null,
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          boxShadow: [
-            BoxShadow(
-              color: Theme.of(context).shadowColor.withValues(alpha: 0.1),
-              blurRadius: AppDimensions.elevationM,
-              offset: const Offset(0, -2),
-            ),
-          ],
-        ),
-        child: BottomNavigationBar(
-          currentIndex: _selectedIndex,
-          onTap: _onItemTapped,
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.home_outlined, size: AppDimensions.iconL),
-              activeIcon: Icon(Icons.home, size: AppDimensions.iconL),
-              label: AppStrings.navHome,
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.face_outlined, size: AppDimensions.iconL),
-              activeIcon: Icon(Icons.face, size: AppDimensions.iconL),
-              label: AppStrings.navRecognizeFace,
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.person_outlined, size: AppDimensions.iconL),
-              activeIcon: Icon(Icons.person, size: AppDimensions.iconL),
-              label: AppStrings.navProfile,
-            ),
-          ],
-        ),
-      ),
+
+        // Draggable Emergency FAB - overlays above everything
+        if (userId.isNotEmpty)
+          DraggableEmergencyButton(
+            patientId: userId,
+            onAlertCreated: () {
+              // Optional: Navigate to specific screen after alert created
+              // atau refresh data jika diperlukan
+            },
+          ),
+      ],
     );
   }
 }
