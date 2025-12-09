@@ -62,7 +62,7 @@ dependencies:
 
   # Face Recognition ML (Phase 3 - 100% FREE!)
   google_mlkit_face_detection: ^0.11.0 # On-device face detection
-  tflite_flutter: ^0.10.4 # TensorFlow Lite runtime
+  tflite_flutter: ^0.12.1 # TensorFlow Lite runtime (Dart 3 compatible)
   camera: ^0.11.0+2 # Camera access
 
   # UI & Utilities
@@ -99,6 +99,7 @@ flutter:
   assets:
     - assets/images/
     - assets/fonts/
+    - assets/ml_models/ # TFLite models for face recognition
     - .env
 
   # Fonts
