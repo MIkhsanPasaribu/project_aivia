@@ -5,6 +5,8 @@ import 'package:project_aivia/core/constants/app_strings.dart';
 import 'package:project_aivia/core/constants/app_dimensions.dart';
 import 'package:project_aivia/core/utils/logout_helper.dart';
 import 'package:project_aivia/presentation/providers/auth_provider.dart';
+import 'package:project_aivia/presentation/providers/location_service_provider.dart';
+import 'package:project_aivia/data/services/location_service.dart';
 import 'package:project_aivia/presentation/screens/patient/profile/edit_profile_screen.dart';
 import 'package:project_aivia/presentation/screens/common/settings_screen.dart';
 import 'package:project_aivia/presentation/screens/common/help_screen.dart';
@@ -139,6 +141,11 @@ class ProfileScreen extends ConsumerWidget {
 
                 const SizedBox(height: AppDimensions.paddingL),
 
+                // ✅ Location Tracking Status Indicator
+                _buildTrackingStatusCard(context, ref),
+
+                const SizedBox(height: AppDimensions.paddingM),
+
                 // Menu Items
                 _buildMenuItem(
                   context,
@@ -250,6 +257,71 @@ class ProfileScreen extends ConsumerWidget {
               Text('Error: ${error.toString()}'),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  /// Build tracking status indicator card
+  Widget _buildTrackingStatusCard(BuildContext context, WidgetRef ref) {
+    final isTracking = ref.watch(isTrackingProvider);
+    final trackingMode = ref.watch(trackingModeProvider);
+
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: AppDimensions.paddingL),
+      child: Padding(
+        padding: const EdgeInsets.all(AppDimensions.paddingM),
+        child: Row(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: isTracking
+                    ? AppColors.success.withValues(alpha: 0.1)
+                    : AppColors.textTertiary.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(AppDimensions.radiusM),
+              ),
+              child: Icon(
+                isTracking ? Icons.location_on : Icons.location_off,
+                color: isTracking ? AppColors.success : AppColors.textTertiary,
+                size: AppDimensions.iconL,
+              ),
+            ),
+            const SizedBox(width: AppDimensions.paddingM),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Pelacakan Lokasi',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    isTracking
+                        ? 'Aktif - Mode: ${trackingMode.displayName}'
+                        : 'Tidak Aktif',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: isTracking
+                          ? AppColors.success
+                          : AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              width: 12,
+              height: 12,
+              decoration: BoxDecoration(
+                color: isTracking ? AppColors.success : AppColors.textTertiary,
+                shape: BoxShape.circle,
+              ),
+            ),
+          ],
         ),
       ),
     );
