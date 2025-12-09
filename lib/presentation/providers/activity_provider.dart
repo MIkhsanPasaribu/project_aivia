@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:project_aivia/data/models/activity.dart';
 import 'package:project_aivia/data/repositories/activity_repository.dart';
 import 'package:project_aivia/core/utils/result.dart';
+import 'package:project_aivia/data/services/notification_service.dart';
 
 /// Provider untuk ActivityRepository instance
 final activityRepositoryProvider = Provider<ActivityRepository>((ref) {
@@ -75,7 +76,18 @@ class ActivityController extends StateNotifier<AsyncValue<void>> {
     );
 
     result.fold(
-      onSuccess: (_) => state = const AsyncValue.data(null),
+      onSuccess: (activity) {
+        state = const AsyncValue.data(null);
+
+        // 🔔 Schedule notification untuk activity baru
+        NotificationService.scheduleActivityReminder(
+          activityId: activity.id,
+          title: activity.title,
+          body: activity.description,
+          scheduledTime: activity.activityTime,
+          minutesBefore: reminderMinutesBefore,
+        );
+      },
       onFailure: (failure) =>
           state = AsyncValue.error(failure.message, StackTrace.current),
     );
@@ -102,7 +114,21 @@ class ActivityController extends StateNotifier<AsyncValue<void>> {
     );
 
     result.fold(
-      onSuccess: (_) => state = const AsyncValue.data(null),
+      onSuccess: (activity) {
+        state = const AsyncValue.data(null);
+
+        // 🔔 Cancel old notification dan schedule ulang jika waktu berubah
+        if (activityTime != null) {
+          NotificationService.cancelActivityReminder(activityId);
+          NotificationService.scheduleActivityReminder(
+            activityId: activity.id,
+            title: activity.title,
+            body: activity.description,
+            scheduledTime: activity.activityTime,
+            minutesBefore: reminderMinutesBefore ?? 15,
+          );
+        }
+      },
       onFailure: (failure) =>
           state = AsyncValue.error(failure.message, StackTrace.current),
     );
@@ -113,6 +139,9 @@ class ActivityController extends StateNotifier<AsyncValue<void>> {
   /// Delete activity
   Future<Result<void>> deleteActivity(String activityId) async {
     state = const AsyncValue.loading();
+
+    // 🔔 Cancel notification sebelum delete
+    await NotificationService.cancelActivityReminder(activityId);
 
     final result = await _activityRepository.deleteActivity(activityId);
 
