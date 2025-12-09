@@ -1,6 +1,7 @@
 import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
+import '../../main.dart'; // For navigatorKey
 
 /// Service untuk mengelola local notifications menggunakan Awesome Notifications
 ///
@@ -202,22 +203,90 @@ class NotificationService {
   }
 
   /// Called when user taps notification
+  ///
+  /// Handles navigation based on notification type:
+  /// - activity_reminder → Navigate to activity detail
+  /// - activity_pickup → Navigate to activity detail
+  /// - emergency_alert → Navigate to emergency screen (family)
+  /// - geofence_event → Navigate to patient map (family)
   @pragma('vm:entry-point')
   static Future<void> _onActionReceivedMethod(
     ReceivedAction receivedAction,
   ) async {
-    debugPrint('📱 Notification Action: ${receivedAction.buttonKeyPressed}');
+    debugPrint('📱 Notification Tapped: ${receivedAction.title}');
 
-    // TODO: Handle navigation berdasarkan notification type
-    // Contoh: Navigate ke activity detail screen
-    if (receivedAction.payload != null) {
-      final activityId = receivedAction.payload!['activity_id'];
-      final type = receivedAction.payload!['type'];
+    // Get notification payload
+    if (receivedAction.payload == null || receivedAction.payload!.isEmpty) {
+      debugPrint('⚠️ No payload, skipping navigation');
+      return;
+    }
 
-      debugPrint('Activity ID: $activityId, Type: $type');
+    final payload = receivedAction.payload!;
+    final type = payload['type'];
 
-      // Implementasi navigation bisa ditambahkan di sini
-      // Contoh: Get.toNamed('/activity-detail', arguments: activityId);
+    debugPrint('   Type: $type');
+    debugPrint('   Payload: $payload');
+
+    // Import navigator key from main.dart
+    // Navigate based on notification type
+    try {
+      final context = navigatorKey.currentContext;
+      if (context == null) {
+        debugPrint('⚠️ Navigator context not available');
+        return;
+      }
+
+      switch (type) {
+        case 'activity_reminder':
+        case 'activity_pickup':
+          // Navigate to activity detail (patient view)
+          final activityId = payload['activity_id'];
+          if (activityId != null) {
+            debugPrint('🔄 Navigating to activity detail: $activityId');
+            // Note: ActivityDetailScreen should be created or use existing ActivityListScreen
+            Navigator.of(context).pushNamed(
+              '/patient/home', // Navigate to home, activity tab will show
+            );
+          }
+          break;
+
+        case 'emergency_alert':
+          // Navigate to emergency screen (family view)
+          final alertId = payload['alert_id'];
+          if (alertId != null) {
+            debugPrint('🚨 Navigating to emergency alert: $alertId');
+            Navigator.of(context).pushNamed(
+              '/family/home', // Family home, will show emergency notification
+            );
+          }
+          break;
+
+        case 'geofence_entered':
+        case 'geofence_exited':
+          // Navigate to patient tracking map (family view)
+          final patientId = payload['patient_id'];
+          if (patientId != null) {
+            debugPrint('📍 Navigating to patient map: $patientId');
+            Navigator.of(context).pushNamed(
+              '/family/home', // Family home, navigate to map tab
+            );
+          }
+          break;
+
+        case 'face_recognition':
+          // Navigate to face recognition result (patient view)
+          debugPrint('👤 Navigating to face recognition');
+          Navigator.of(context).pushNamed(
+            '/patient/home', // Patient home, navigate to kenali wajah tab
+          );
+          break;
+
+        default:
+          debugPrint('⚠️ Unknown notification type: $type');
+      }
+    } catch (e, stackTrace) {
+      debugPrint('❌ Navigation error: $e');
+      debugPrint('   Stack: $stackTrace');
     }
   }
 
