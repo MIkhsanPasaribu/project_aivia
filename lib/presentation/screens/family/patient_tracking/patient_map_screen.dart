@@ -224,7 +224,7 @@ class _PatientMapScreenState extends ConsumerState<PatientMapScreen> {
               urlTemplate: MapConfig.osmTileUrl,
               userAgentPackageName: MapConfig.userAgent,
               maxZoom: MapConfig.maxZoom,
-              // TODO: Add caching in future optimization
+              // Note: Location caching implemented in Sprint 6 if needed
             ),
 
             // Location trail polyline (recent locations)
