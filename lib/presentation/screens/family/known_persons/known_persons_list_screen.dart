@@ -18,13 +18,22 @@ import 'edit_known_person_screen.dart';
 /// - Grid view dengan person cards
 /// - Search functionality
 /// - Pull to refresh
-/// - Add FAB
-/// - Edit on tap
-/// - Delete on long press
+/// - Add FAB (if not read-only)
+/// - Edit on tap (if not read-only)
+/// - Delete on long press (if not read-only)
+///
+/// **Modes**:
+/// - Family Mode (isReadOnly = false): Full CRUD operations
+/// - Patient Mode (isReadOnly = true): View only, no edit/delete
 class KnownPersonsListScreen extends ConsumerStatefulWidget {
   final String patientId;
+  final bool isReadOnly;
 
-  const KnownPersonsListScreen({super.key, required this.patientId});
+  const KnownPersonsListScreen({
+    super.key,
+    required this.patientId,
+    this.isReadOnly = false,
+  });
 
   @override
   ConsumerState<KnownPersonsListScreen> createState() =>
@@ -51,11 +60,13 @@ class _KnownPersonsListScreenState
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Orang Dikenal'),
+        title: Text(
+          widget.isReadOnly ? 'Lihat Orang Dikenal' : 'Orang Dikenal',
+        ),
         actions: [
-          // Stats badge
-          _buildStatsBadge(isDark),
-          const SizedBox(width: 8),
+          // Stats badge (only for Family mode)
+          if (!widget.isReadOnly) _buildStatsBadge(isDark),
+          if (!widget.isReadOnly) const SizedBox(width: 8),
         ],
       ),
       body: Column(
@@ -83,12 +94,14 @@ class _KnownPersonsListScreenState
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _navigateToAddPerson,
-        icon: const Icon(Icons.person_add_rounded),
-        label: const Text('Tambah Orang'),
-        backgroundColor: AppColors.primary,
-      ),
+      floatingActionButton: widget.isReadOnly
+          ? null // Hide FAB in read-only mode (Patient)
+          : FloatingActionButton.extended(
+              onPressed: _navigateToAddPerson,
+              icon: const Icon(Icons.person_add_rounded),
+              label: const Text('Tambah Orang'),
+              backgroundColor: AppColors.primary,
+            ),
     );
   }
 
@@ -188,11 +201,14 @@ class _KnownPersonsListScreenState
     if (allPersons.isEmpty) {
       return EmptyStateWidget(
         icon: Icons.person_off_rounded,
-        title: 'Belum Ada Orang Dikenal',
-        description:
-            'Tambahkan orang-orang terdekat pasien agar mereka bisa dikenali',
-        actionButtonText: 'Tambah Sekarang',
-        onActionButtonTap: _navigateToAddPerson,
+        title: widget.isReadOnly
+            ? 'Belum Ada Orang Dikenal'
+            : 'Belum Ada Orang Dikenal',
+        description: widget.isReadOnly
+            ? 'Minta keluarga Anda untuk menambahkan orang-orang yang sering Anda temui'
+            : 'Tambahkan orang-orang terdekat pasien agar mereka bisa dikenali',
+        actionButtonText: widget.isReadOnly ? null : 'Tambah Sekarang',
+        onActionButtonTap: widget.isReadOnly ? null : _navigateToAddPerson,
       );
     }
 
@@ -222,8 +238,13 @@ class _KnownPersonsListScreenState
           final person = filteredPersons[index];
           return KnownPersonCard(
             person: person,
-            onTap: () => _navigateToEditPerson(person),
-            onLongPress: () => _showDeleteConfirmation(person),
+            onTap: widget.isReadOnly
+                ? () =>
+                      _showPersonDetails(person) // View details in dialog
+                : () => _navigateToEditPerson(person), // Edit
+            onLongPress: widget.isReadOnly
+                ? null // Disable delete for Patient
+                : () => _showDeleteConfirmation(person),
           );
         },
       ),
@@ -242,6 +263,112 @@ class _KnownPersonsListScreenState
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => EditKnownPersonScreen(person: person),
+      ),
+    );
+  }
+
+  /// Show person details in dialog (read-only mode for Patient)
+  void _showPersonDetails(KnownPerson person) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        contentPadding: const EdgeInsets.all(AppDimensions.paddingL),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Photo
+              if (person.photoUrl.isNotEmpty)
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(AppDimensions.radiusM),
+                  child: Image.network(
+                    person.photoUrl,
+                    width: 200,
+                    height: 200,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stack) => Container(
+                      width: 200,
+                      height: 200,
+                      color: isDark
+                          ? AppColors.surfaceVariant.withValues(alpha: 0.3)
+                          : AppColors.surfaceVariant,
+                      child: const Icon(
+                        Icons.person_rounded,
+                        size: 64,
+                        color: AppColors.textTertiary,
+                      ),
+                    ),
+                  ),
+                ),
+              const SizedBox(height: AppDimensions.paddingM),
+
+              // Name
+              Text(
+                person.fullName,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: AppDimensions.paddingS),
+
+              // Relationship
+              if (person.relationship != null &&
+                  person.relationship!.isNotEmpty)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppDimensions.paddingM,
+                    vertical: AppDimensions.paddingS,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(AppDimensions.radiusM),
+                  ),
+                  child: Text(
+                    person.relationship!,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                ),
+              const SizedBox(height: AppDimensions.paddingM),
+
+              // Bio
+              if (person.bio != null && person.bio!.isNotEmpty)
+                Container(
+                  padding: const EdgeInsets.all(AppDimensions.paddingM),
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? AppColors.surfaceVariant.withValues(alpha: 0.2)
+                        : AppColors.surfaceVariant,
+                    borderRadius: BorderRadius.circular(AppDimensions.radiusM),
+                  ),
+                  child: Text(
+                    person.bio!,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: AppColors.textSecondary,
+                      height: 1.5,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Tutup'),
+          ),
+        ],
       ),
     );
   }
