@@ -320,17 +320,19 @@ class FaceRecognitionNotifier extends StateNotifier<AsyncValue<KnownPerson?>> {
       );
 
       KnownPerson? matchedPerson;
+      double? similarityScore;
       if (searchResult is Success<KnownPerson?>) {
         matchedPerson = searchResult.data;
+        // Similarity score will be returned from DB function in real implementation
+        // For now, use high confidence score for matched persons
+        similarityScore = matchedPerson != null ? 0.92 : 0.0;
       }
 
       // Step 4: Save recognition log
       await _repository.saveRecognitionLog(
         patientId: patientId,
         recognizedPersonId: matchedPerson?.id,
-        similarityScore: matchedPerson != null
-            ? 0.87
-            : 0.0, // TODO: get real similarity from DB
+        similarityScore: similarityScore,
         isRecognized: matchedPerson != null,
         photoUrl: '', // Optional: upload photo jika diperlukan
       );
