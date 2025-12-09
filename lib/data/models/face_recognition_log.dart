@@ -36,8 +36,8 @@ class FaceRecognitionLog {
           // GeoJSON format
           final coords = locationData['coordinates'] as List;
           location = LatLng(
-            (coords[1] as num).toDouble(), // latitude
-            (coords[0] as num).toDouble(), // longitude
+            (coords[1] as num?)?.toDouble() ?? 0.0, // latitude
+            (coords[0] as num?)?.toDouble() ?? 0.0, // longitude
           );
         } else if (locationData is String) {
           // POINT format
@@ -63,7 +63,7 @@ class FaceRecognitionLog {
       patientId: json['patient_id'] as String,
       recognizedPersonId: json['recognized_person_id'] as String?,
       similarityScore: json['similarity_score'] != null
-          ? (json['similarity_score'] as num).toDouble()
+          ? (json['similarity_score'] as num?)?.toDouble()
           : null,
       isRecognized: json['is_recognized'] as bool? ?? false,
       photoUrl: json['photo_url'] as String?,
