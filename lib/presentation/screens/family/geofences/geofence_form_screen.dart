@@ -109,7 +109,8 @@ class _GeofenceFormScreenState extends ConsumerState<GeofenceFormScreen> {
           _descriptionController.text = geofence.description ?? '';
           _addressController.text = geofence.address ?? '';
           _selectedType = geofence.fenceType;
-          _radiusMeters = geofence.radiusMeters.toDouble();
+          _radiusMeters = geofence.radiusMeters
+              .toDouble(); // Safe: radiusMeters is non-null
           _alertOnEnter = geofence.alertOnEnter;
           _alertOnExit = geofence.alertOnExit;
           _priority = geofence.priority;
