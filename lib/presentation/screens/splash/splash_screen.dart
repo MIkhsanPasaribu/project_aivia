@@ -7,6 +7,7 @@ import 'package:project_aivia/presentation/providers/auth_provider.dart';
 import 'package:project_aivia/presentation/providers/profile_provider.dart';
 import 'package:project_aivia/presentation/providers/fcm_provider.dart';
 import 'package:project_aivia/data/models/user_profile.dart';
+import 'package:project_aivia/data/services/notification_service.dart';
 
 /// Splash Screen - Tampilan awal aplikasi
 class SplashScreen extends ConsumerStatefulWidget {
@@ -55,6 +56,18 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   Future<void> _navigateAfterDelay() async {
     // Delay 2.5 detik
     await Future.delayed(const Duration(milliseconds: 2500));
+
+    if (!mounted) return;
+
+    // ✨ Request notification permissions pertama kali
+    try {
+      final isAllowed = await NotificationService.requestPermissions();
+      debugPrint(
+        '📱 Notification permission: ${isAllowed ? "Granted" : "Denied"}',
+      );
+    } catch (e) {
+      debugPrint('⚠️ Failed to request notification permission: $e');
+    }
 
     if (!mounted) return;
 
