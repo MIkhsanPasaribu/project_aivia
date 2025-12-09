@@ -76,7 +76,8 @@ class FaceRecognitionService {
       try {
         // Create a minimal test image to force initialization
         // This prevents "Bad state: failed precondition" error
-        final testImage = img.Image(width: 10, height: 10);
+        // ML Kit requires minimum 32x32 pixels - using 100x100 to be safe
+        final testImage = img.Image(width: 100, height: 100);
         final testBytes = img.encodePng(testImage);
         final tempFile = File(
           '${Directory.systemTemp.path}/ml_kit_init_${DateTime.now().millisecondsSinceEpoch}.png',
