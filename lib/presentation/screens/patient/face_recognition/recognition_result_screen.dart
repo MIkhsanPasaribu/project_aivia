@@ -7,6 +7,7 @@ import '../../../../core/constants/app_dimensions.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/utils/date_formatter.dart';
 import '../../../../data/models/known_person.dart';
+import '../../family/known_persons/known_persons_list_screen.dart';
 
 /// Screen untuk menampilkan hasil face recognition
 ///
@@ -523,9 +524,16 @@ class RecognitionResultScreen extends ConsumerWidget {
         // Secondary action button
         OutlinedButton.icon(
           onPressed: () {
-            // TODO: Navigate to known persons list (family feature)
-            // For now, just show info dialog
-            _showKnownPersonsInfo(context);
+            // Navigate to known persons list (read-only for Patient)
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => KnownPersonsListScreen(
+                  patientId: patientId,
+                  isReadOnly: true, // Patient can only view, not edit
+                ),
+              ),
+            );
           },
           icon: const Icon(Icons.people_rounded, size: 24),
           label: const Text(
@@ -544,26 +552,6 @@ class RecognitionResultScreen extends ConsumerWidget {
           ),
         ),
       ],
-    );
-  }
-
-  void _showKnownPersonsInfo(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Info'),
-        content: const Text(
-          'Fitur melihat daftar orang dikenal hanya tersedia untuk akun keluarga/wali.\n\n'
-          'Minta keluarga Anda untuk menambahkan orang-orang yang sering Anda temui '
-          'ke dalam database.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
     );
   }
 }
