@@ -196,7 +196,8 @@ class _GeofenceDetailScreenState extends ConsumerState<GeofenceDetailScreen> {
               circles: [
                 CircleMarker(
                   point: centerPoint,
-                  radius: geofence.radiusMeters.toDouble(),
+                  radius: geofence.radiusMeters
+                      .toDouble(), // Safe: radiusMeters is non-null
                   useRadiusInMeter: true,
                   color: _getCircleColor(geofence).withValues(alpha: 0.2),
                   borderColor: _getCircleColor(geofence),
