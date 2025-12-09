@@ -21,11 +21,11 @@ class FCMRepository {
   /// Save or update FCM token
   ///
   /// Menggunakan UPSERT untuk handle token yang sudah ada
-  /// Conflict resolution: (user_id, token) unique constraint
+  /// Conflict resolution: token unique constraint
+  /// Platform info disimpan di dalam device_info JSONB
   Future<void> saveToken({
     required String userId,
     required String token,
-    required String deviceType,
     Map<String, dynamic>? deviceInfo,
   }) async {
     try {
@@ -34,11 +34,11 @@ class FCMRepository {
       await _supabase.from('fcm_tokens').upsert({
         'user_id': userId,
         'token': token,
-        'device_type': deviceType,
-        'device_info': deviceInfo,
+        'device_info': deviceInfo ?? {},
         'is_active': true,
+        'last_used_at': DateTime.now().toIso8601String(),
         'updated_at': DateTime.now().toIso8601String(),
-      }, onConflict: 'user_id,token');
+      }, onConflict: 'token');
 
       debugPrint('✅ FCMRepository: Token saved successfully');
     } catch (e) {
