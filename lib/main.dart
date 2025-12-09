@@ -21,6 +21,8 @@ import 'package:project_aivia/presentation/screens/family/family_home_screen.dar
 import 'package:project_aivia/data/services/fcm_service.dart';
 // 🆕 Notification Service import
 import 'package:project_aivia/data/services/notification_service.dart';
+// 🆕 Face Recognition Service import
+import 'package:project_aivia/data/services/face_recognition_service.dart';
 
 /// 🎯 Global Navigator Key untuk FCM notification tap handling
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -37,6 +39,11 @@ void main() async {
   // 🆕 Initialize Local Notifications
   await NotificationService.initialize();
   debugPrint('✅ Main: Notification service initialized');
+
+  // 🆕 Initialize Face Recognition Service (load TFLite model)
+  final faceRecognitionService = FaceRecognitionService();
+  await faceRecognitionService.initialize();
+  debugPrint('✅ Main: Face recognition service initialized');
 
   // Load environment variables dari .env
   await dotenv.load(fileName: ".env");
