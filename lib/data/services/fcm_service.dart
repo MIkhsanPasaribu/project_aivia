@@ -247,17 +247,21 @@ class FCMService {
 
       debugPrint('💾 FCMService: Saving token to database...');
 
-      // Get device info
+      // Get device info with platform
       final deviceInfoMap = await _getDeviceInfo();
 
-      // Upsert token ke fcm_tokens table
+      // Add platform info to device_info JSONB
+      deviceInfoMap['platform'] = Platform.isAndroid ? 'android' : 'ios';
+
+      // Upsert token ke fcm_tokens table (tanpa device_type column)
       await _supabase.from('fcm_tokens').upsert({
         'user_id': userId,
         'token': token,
-        'device_type': Platform.isAndroid ? 'android' : 'ios',
         'device_info': deviceInfoMap,
+        'is_active': true,
+        'last_used_at': DateTime.now().toIso8601String(),
         'updated_at': DateTime.now().toIso8601String(),
-      }, onConflict: 'user_id,token');
+      }, onConflict: 'token');
 
       debugPrint('✅ FCMService: Token saved to database');
     } catch (e) {
