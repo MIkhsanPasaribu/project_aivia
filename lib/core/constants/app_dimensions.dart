@@ -60,4 +60,12 @@ class AppDimensions {
 
   // App Bar
   static const double appBarHeight = 56.0;
+
+  // Aliases untuk backward compatibility
+  static const double paddingSmall = paddingS;
+  static const double paddingMedium = paddingM;
+  static const double paddingLarge = paddingL;
+  static const double borderRadiusSmall = radiusS;
+  static const double borderRadiusMedium = radiusM;
+  static const double borderRadiusLarge = radiusL;
 }
