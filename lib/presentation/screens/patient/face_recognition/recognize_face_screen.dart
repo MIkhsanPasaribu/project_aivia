@@ -9,6 +9,7 @@ import '../../../../core/constants/app_dimensions.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/utils/result.dart';
 import '../../../../data/models/known_person.dart';
+import '../../../../data/models/face_recognition_log.dart';
 import '../../../providers/face_recognition_provider.dart';
 import 'recognition_result_screen.dart';
 
@@ -113,7 +114,7 @@ class _RecognizeFaceScreenState extends ConsumerState<RecognizeFaceScreen>
         _errorMessage = null;
       });
     } catch (e) {
-      debugPrint('⚠️ Camera initialization error: $e');
+      debugPrint('?????? Camera initialization error: $e');
       setState(() {
         _errorMessage = '${AppStrings.cameraInitError}\n${e.toString()}';
       });
@@ -185,8 +186,21 @@ class _RecognizeFaceScreenState extends ConsumerState<RecognizeFaceScreen>
 
       // 4. Extract recognized person from Result
       KnownPerson? recognizedPerson;
+      double? similarityScore;
       if (result is Success<KnownPerson?>) {
         recognizedPerson = result.data;
+        // Query latest similarity score from recognition log
+        if (recognizedPerson != null) {
+          final logsResult = await ref
+              .read(knownPersonRepositoryProvider)
+              .getRecognitionLogs(patientId: widget.patientId, limit: 1);
+          if (logsResult is Success<List<FaceRecognitionLog>>) {
+            final logs = logsResult.data;
+            if (logs.isNotEmpty) {
+              similarityScore = logs.first.similarityScore;
+            }
+          }
+        }
       }
 
       // 5. Navigate to result
@@ -197,7 +211,7 @@ class _RecognizeFaceScreenState extends ConsumerState<RecognizeFaceScreen>
             builder: (context) => RecognitionResultScreen(
               capturedImage: imageFile,
               recognizedPerson: recognizedPerson,
-              similarity: null, // TODO: Query from FaceRecognitionLog if needed
+              similarity: similarityScore,
               patientId: widget.patientId,
             ),
           ),
@@ -207,7 +221,7 @@ class _RecognizeFaceScreenState extends ConsumerState<RecognizeFaceScreen>
         _startImageStream();
       }
     } catch (e) {
-      debugPrint('⚠️ Recognition error: $e');
+      debugPrint('?????? Recognition error: $e');
       _showSnackBar('Gagal memproses: ${e.toString()}', isError: true);
       // Restart detection on error
       _startImageStream();
