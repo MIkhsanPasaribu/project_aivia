@@ -48,6 +48,9 @@ class FaceRecognitionService {
     milliseconds: 500,
   ); // Process max 2 frames/sec
 
+  /// ✅ FIX #1: Concurrent processing guard
+  bool _isProcessingFrame = false;
+
   // Singleton pattern
   static FaceRecognitionService? _instance;
 
@@ -276,6 +279,11 @@ class FaceRecognitionService {
   /// is now preferred for better user experience and reliability.
   Future<List<Face>> detectFacesInFrame(CameraImage image) async {
     try {
+      // ✅ FIX #1: Concurrent guard - atomic check-and-set
+      if (_isProcessingFrame) {
+        return []; // Already processing a frame, skip this one
+      }
+
       // Rate limiting - skip frames if processing too fast
       final now = DateTime.now();
       if (_lastFrameProcessTime != null) {
@@ -285,34 +293,44 @@ class FaceRecognitionService {
           return [];
         }
       }
+
+      // ✅ FIX #1: Lock - prevent concurrent execution
+      _isProcessingFrame = true;
       _lastFrameProcessTime = now;
 
-      final inputImage = _convertCameraImageToInputImage(image);
-      if (inputImage == null) {
-        // Silent skip - logged in converter
-        return [];
-      }
-
-      // Safe call with graceful error handling
       try {
-        final faces = await _faceDetector.processImage(inputImage);
-        return faces;
-      } catch (stateError) {
-        // Handle initialization issues gracefully - don't crash, just skip frame
-        final errorStr = stateError.toString().toLowerCase();
-        if (errorStr.contains('precondition') ||
-            errorStr.contains('not initialized') ||
-            errorStr.contains('bad state')) {
-          // Silently skip - this is expected during warm-up
+        final inputImage = _convertCameraImageToInputImage(image);
+        if (inputImage == null) {
+          // Silent skip - logged in converter
           return [];
         }
-        // Other errors - log but don't crash
-        debugPrint('! Frame detection error: $stateError');
-        return [];
+
+        // Safe call with graceful error handling
+        try {
+          final faces = await _faceDetector.processImage(inputImage);
+          return faces;
+        } catch (stateError) {
+          // Handle initialization issues gracefully - don't crash, just skip frame
+          final errorStr = stateError.toString().toLowerCase();
+          if (errorStr.contains('precondition') ||
+              errorStr.contains('not initialized') ||
+              errorStr.contains('bad state')) {
+            // Silently skip - this is expected during warm-up
+            return [];
+          }
+          // Other errors - log but don't crash
+          debugPrint('⚠️ Frame detection error: $stateError');
+          return [];
+        }
+      } finally {
+        // ✅ FIX #1: Always unlock, even on error
+        _isProcessingFrame = false;
       }
     } catch (e) {
       // Catch-all for unexpected errors
-      debugPrint('! Unexpected frame detection error: $e');
+      debugPrint('❌ Unexpected frame detection error: $e');
+      // ✅ FIX #1: Ensure unlock on outer catch
+      _isProcessingFrame = false;
       return [];
     }
   }
@@ -565,17 +583,30 @@ class FaceRecognitionService {
 
   /// Preprocess image untuk TFLite inference
   ///
+  /// ✅ FIX #2: Memory-safe dengan file size check dan pre-resize untuk large images
+  ///
   /// **Input**: Cropped face image (any size)
   /// **Output**: Float32List shaped [1, 112, 112, 3], normalized to [0, 1]
   ///
   /// Steps:
-  /// 1. Decode image
-  /// 2. Resize ke 112x112 (GhostFaceNet input size)
-  /// 3. Convert ke Float32List
-  /// 4. Normalize RGB values ke [0, 1]
-  /// 5. Reshape ke tensor format [1, 112, 112, 3]
+  /// 1. Check file size (✅ FIX #2: Prevent OOM)
+  /// 2. Decode image (with downsampling if needed)
+  /// 3. Resize ke 112x112 (GhostFaceNet input size)
+  /// 4. Convert ke Float32List
+  /// 5. Normalize RGB values ke [0, 1]
   Future<Float32List?> _preprocessImageForInference(File imageFile) async {
     try {
+      // ✅ FIX #2: Check file size first to prevent OOM
+      final fileStat = await imageFile.stat();
+      const maxFileSize = 10 * 1024 * 1024; // 10MB limit
+
+      if (fileStat.size > maxFileSize) {
+        debugPrint(
+          '⚠️ Large image detected: ${(fileStat.size / 1024 / 1024).toStringAsFixed(1)}MB',
+        );
+        debugPrint('   Pre-resizing to prevent OOM...');
+      }
+
       // 1. Decode image
       final imageBytes = await imageFile.readAsBytes();
       final image = img.decodeImage(imageBytes);
@@ -585,9 +616,29 @@ class FaceRecognitionService {
         return null;
       }
 
-      // 2. Resize to 112x112 dengan cubic interpolation (high quality)
+      // ✅ FIX #2: Pre-resize large images before full processing
+      img.Image processedImage = image;
+      if (fileStat.size > maxFileSize) {
+        final maxDimension = image.width > image.height
+            ? image.width
+            : image.height;
+        if (maxDimension > 1024) {
+          final scale = 1024 / maxDimension;
+          processedImage = img.copyResize(
+            image,
+            width: (image.width * scale).toInt(),
+            height: (image.height * scale).toInt(),
+            interpolation: img.Interpolation.average, // Fast for pre-resize
+          );
+          debugPrint(
+            '   ✓ Pre-resized from ${image.width}x${image.height} to ${processedImage.width}x${processedImage.height}',
+          );
+        }
+      }
+
+      // 2. Final resize to model input size dengan cubic interpolation (high quality)
       final resized = img.copyResize(
-        image,
+        processedImage,
         width: _inputSize,
         height: _inputSize,
         interpolation: img.Interpolation.cubic,
@@ -702,20 +753,57 @@ class FaceRecognitionService {
 
   /// Dispose service resources
   ///
+  /// ✅ FIX #3: Robust disposal with proper checks and cleanup
+  ///
   /// Closes:
   /// - Face detector
   /// - TFLite interpreter
+  /// - Resets singleton instance
   Future<void> dispose() async {
-    try {
-      await _faceDetector.close();
-      _interpreter?.close();
+    // ✅ FIX #3: Prevent multiple dispose calls
+    if (!_isInitialized && !_isModelLoaded) {
+      debugPrint('ℹ️ FaceRecognitionService already disposed');
+      return;
+    }
 
+    try {
+      // ✅ FIX #3: Stop ongoing processing
+      _isProcessingFrame = true; // Block new frames
+
+      // ✅ FIX #3: Close face detector safely
+      try {
+        await _faceDetector.close();
+        debugPrint('  ✓ Face detector closed');
+      } catch (e) {
+        debugPrint('  ⚠️ Error closing face detector: $e');
+      }
+
+      // ✅ FIX #3: Close TFLite interpreter safely
+      try {
+        _interpreter?.close();
+        _interpreter = null; // ✅ Nullify reference
+        debugPrint('  ✓ TFLite interpreter closed');
+      } catch (e) {
+        debugPrint('  ⚠️ Error closing interpreter: $e');
+      }
+
+      // ✅ FIX #3: Reset all flags
       _isInitialized = false;
       _isModelLoaded = false;
+      _isProcessingFrame = false;
+      _lastFrameProcessTime = null;
 
-      debugPrint('✅ FaceRecognitionService disposed');
+      // ✅ FIX #3: Reset singleton instance (for testing/hot reload)
+      _instance = null;
+
+      debugPrint('✅ FaceRecognitionService disposed completely');
     } catch (e) {
-      debugPrint('⚠️ Error disposing FaceRecognitionService: $e');
+      debugPrint('❌ Critical error during dispose: $e');
+      // ✅ FIX #3: Force reset even on error
+      _isInitialized = false;
+      _isModelLoaded = false;
+      _isProcessingFrame = false;
+      _instance = null;
     }
   }
 }

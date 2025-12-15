@@ -12,6 +12,9 @@ class KnownPerson {
   final DateTime createdAt;
   final DateTime updatedAt;
 
+  // ✅ FIX #4: Similarity score dari recognition (transient field, tidak disimpan di DB)
+  final double? similarityScore; // Range [0, 1], null jika belum di-recognize
+
   const KnownPerson({
     required this.id,
     required this.ownerId,
@@ -24,6 +27,7 @@ class KnownPerson {
     this.recognitionCount = 0,
     required this.createdAt,
     required this.updatedAt,
+    this.similarityScore, // ✅ FIX #4: Optional, only set during recognition
   });
 
   /// Create dari JSON (dari Supabase)
@@ -61,6 +65,8 @@ class KnownPerson {
       recognitionCount: json['recognition_count'] as int? ?? 0,
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
+      similarityScore:
+          json['similarity'] as double?, // ✅ FIX #4: Parse from DB function
     );
   }
 
@@ -97,6 +103,7 @@ class KnownPerson {
     int? recognitionCount,
     DateTime? createdAt,
     DateTime? updatedAt,
+    double? similarityScore, // ✅ FIX #4
   }) {
     return KnownPerson(
       id: id ?? this.id,
@@ -110,6 +117,7 @@ class KnownPerson {
       recognitionCount: recognitionCount ?? this.recognitionCount,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      similarityScore: similarityScore ?? this.similarityScore, // ✅ FIX #4
     );
   }
 
@@ -148,7 +156,7 @@ class KnownPerson {
 
   @override
   String toString() {
-    return 'KnownPerson(id: $id, fullName: $fullName, relationship: $relationship, recognitionCount: $recognitionCount)';
+    return 'KnownPerson(id: $id, fullName: $fullName, relationship: $relationship, recognitionCount: $recognitionCount, similarityScore: $similarityScore)';
   }
 
   @override

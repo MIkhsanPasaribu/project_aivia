@@ -22,6 +22,12 @@
     <!-- Wake lock untuk background tasks -->
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     
+    <!-- Battery optimization exemption (Android 6+) -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+    
+    <!-- Boot receiver untuk auto-restart tracking setelah reboot -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    
     <!-- Firebase Cloud Messaging -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     
@@ -59,6 +65,27 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+        
+        <!-- ========================================== -->
+        <!-- FOREGROUND SERVICE for Location Tracking   -->
+        <!-- ========================================== -->
+        <service
+            android:name="com.pravera.flutter_foreground_task.service.ForegroundService"
+            android:foregroundServiceType="location"
+            android:exported="false"
+            android:stopWithTask="false" />
+        
+        <!-- ========================================== -->
+        <!-- BOOT RECEIVER for Auto-Restart            -->
+        <!-- ========================================== -->
+        <receiver
+            android:name="com.pravera.flutter_foreground_task.service.BootReceiver"
+            android:enabled="true"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and

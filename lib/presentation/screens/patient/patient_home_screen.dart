@@ -10,6 +10,7 @@ import 'package:project_aivia/presentation/widgets/emergency/draggable_emergency
 import 'package:project_aivia/presentation/providers/auth_provider.dart';
 import 'package:project_aivia/presentation/providers/location_service_provider.dart';
 import 'package:project_aivia/data/services/location_service.dart';
+import 'package:project_aivia/core/utils/battery_optimization_helper.dart';
 
 /// Patient Home Screen dengan Bottom Navigation
 class PatientHomeScreen extends ConsumerStatefulWidget {
@@ -40,7 +41,12 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     // Stop tracking saat screen di-dispose
-    _stopLocationTracking();
+    // FIXED: Cek init status untuk prevent race condition
+    if (!_isInitializingTracking) {
+      _stopLocationTracking();
+    } else {
+      debugPrint('⚠️ Cannot stop tracking while initializing');
+    }
     super.dispose();
   }
 
@@ -133,6 +139,46 @@ class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen>
           );
         },
       );
+
+      // STEP 3.5: Check battery optimization status (NEW)
+      debugPrint('🔋 Checking battery optimization...');
+      final isBatteryOptimized =
+          await BatteryOptimizationHelper.isBatteryOptimizationDisabled();
+
+      if (!isBatteryOptimized && mounted) {
+        debugPrint('⚠️ Battery optimization is enabled');
+        // Show educational dialog
+        final shouldRequest =
+            await BatteryOptimizationHelper.showBatteryOptimizationDialog(
+              // ignore: use_build_context_synchronously
+              context,
+            ) ??
+            false;
+
+        if (shouldRequest) {
+          final granted =
+              await BatteryOptimizationHelper.requestBatteryOptimizationExemption();
+          if (granted) {
+            debugPrint('✅ Battery optimization exemption granted');
+          } else {
+            debugPrint('⚠️ Battery optimization exemption denied');
+            // Show reminder
+            if (mounted) {
+              final shouldOpenSettings =
+                  await BatteryOptimizationHelper.showBatteryOptimizationReminderDialog(
+                    // ignore: use_build_context_synchronously
+                    context,
+                  ) ??
+                  false;
+              if (shouldOpenSettings) {
+                await BatteryOptimizationHelper.openBatteryOptimizationSettings();
+              }
+            }
+          }
+        }
+      } else {
+        debugPrint('✅ Battery optimization already disabled');
+      }
 
       // STEP 4: Start tracking dengan balanced mode
       debugPrint('📍 Starting location tracking...');

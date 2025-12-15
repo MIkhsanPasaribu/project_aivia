@@ -9,6 +9,7 @@ import 'package:project_aivia/data/models/location.dart';
 import 'package:project_aivia/data/repositories/location_repository.dart';
 import 'package:project_aivia/data/services/offline_queue_service.dart';
 import 'package:project_aivia/data/services/location_queue_database.dart';
+import 'package:project_aivia/data/services/foreground_task_service.dart';
 
 /// Service untuk background location tracking dengan battery optimization
 ///
@@ -168,6 +169,8 @@ class LocationService {
   ///
   /// [patientId] - ID pasien yang akan dilacak
   /// [mode] - Tracking mode (affects battery usage)
+  ///
+  /// **ENHANCED**: Now uses ForegroundTaskService for 24/7 tracking
   Future<Result<void>> startTracking(
     String patientId, {
     TrackingMode mode = TrackingMode.balanced,
@@ -188,10 +191,27 @@ class LocationService {
       _trackingMode = mode;
       _isTracking = true;
 
+      // **NEW**: Initialize foreground task service
+      await ForegroundTaskService.initialize();
+
+      // **NEW**: Start foreground service untuk background tracking
+      final started = await ForegroundTaskService.start(
+        patientId: patientId,
+        trackingMode: mode.name,
+      );
+
+      if (!started) {
+        _isTracking = false;
+        return const ResultFailure(
+          ServerFailure('Gagal memulai foreground service untuk tracking'),
+        );
+      }
+
       // Configure location settings based on mode
       final locationSettings = _getLocationSettings(mode);
 
-      // Start listening to position stream
+      // Start listening to position stream (untuk foreground updates)
+      // Background updates dihandle oleh LocationBackgroundHandler
       _positionSubscription =
           Geolocator.getPositionStream(
             locationSettings: locationSettings,
@@ -206,6 +226,7 @@ class LocationService {
 
       debugPrint('✅ Location tracking started for patient: $patientId');
       debugPrint('🔋 Tracking mode: ${mode.displayName}');
+      debugPrint('🚀 Foreground service: ACTIVE (24/7 tracking enabled)');
 
       return const Success(null);
     } catch (e) {
@@ -214,13 +235,19 @@ class LocationService {
   }
 
   /// Stop location tracking
+  ///
+  /// **ENHANCED**: Now stops ForegroundTaskService
   Future<void> stopTracking() async {
     await _positionSubscription?.cancel();
     _positionSubscription = null;
     _isTracking = false;
     _currentPatientId = null;
 
+    // **NEW**: Stop foreground service
+    await ForegroundTaskService.stop();
+
     debugPrint('🛑 Location tracking stopped');
+    debugPrint('🛑 Foreground service: STOPPED');
   }
 
   /// Get current position (one-time fetch)
@@ -244,7 +271,9 @@ class LocationService {
   }
 
   /// Change tracking mode (affects battery usage)
-  void setTrackingMode(TrackingMode mode) {
+  ///
+  /// FIXED: Async restart dengan proper error handling
+  Future<void> setTrackingMode(TrackingMode mode) async {
     if (_trackingMode == mode) return;
 
     _trackingMode = mode;
@@ -252,9 +281,23 @@ class LocationService {
     // Restart tracking with new mode if currently tracking
     if (_isTracking && _currentPatientId != null) {
       final patientId = _currentPatientId!;
-      stopTracking().then((_) {
-        startTracking(patientId, mode: mode);
-      });
+
+      try {
+        debugPrint('🔄 Restarting tracking with mode: ${mode.displayName}');
+        await stopTracking();
+
+        // Double check masih tracking sebelum restart
+        if (_currentPatientId != null) {
+          await startTracking(patientId, mode: mode);
+        } else {
+          debugPrint('⚠️ Patient ID cleared during mode change, skip restart');
+        }
+      } catch (e) {
+        debugPrint('❌ Error changing tracking mode: $e');
+        // Restore tracking state jika gagal
+        _isTracking = false;
+        _currentPatientId = null;
+      }
     }
   }
 

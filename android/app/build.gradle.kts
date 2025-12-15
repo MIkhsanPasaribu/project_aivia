@@ -43,6 +43,15 @@ android {
             signingConfig = signingConfigs.getByName("debug")
         }
     }
+    
+    // 🆕 Suppress Java compiler warnings for all build types
+    tasks.withType<JavaCompile>().configureEach {
+        options.compilerArgs.addAll(listOf(
+            "-Xlint:none",          // Disable all lints
+            "-Xlint:-unchecked",    // Specifically disable unchecked warnings
+            "-Xlint:-deprecation"   // Disable deprecation warnings
+        ))
+    }
 }
 
 flutter {

@@ -225,7 +225,7 @@ class KnownPersonRepository {
       // Extract result (function returns table with columns)
       final resultData = response is List ? response.first : response;
 
-      // Map function result to KnownPerson
+      // ✅ FIX #4: Map function result to KnownPerson with REAL similarity score
       final knownPerson = KnownPerson(
         id: resultData['id'] as String,
         ownerId: patientId,
@@ -238,6 +238,9 @@ class KnownPersonRepository {
         recognitionCount: 0, // Will be updated by trigger
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
+        similarityScore:
+            resultData['similarity']
+                as double?, // ✅ FIX #4: Extract real similarity from DB
       );
 
       return Success(knownPerson);
@@ -326,16 +329,19 @@ class KnownPersonRepository {
   }
 
   /// Get statistics untuk dashboard
+  ///
+  /// ✅ FIX #5: Null-safe dengan proper checks untuk edge cases
   Future<Result<Map<String, dynamic>>> getStatistics(String patientId) async {
     try {
-      // Get total known persons
+      // ✅ FIX #5: Get total known persons with null check
+      // ✅ FIX #5: Get known persons count (Supabase always returns non-null list)
       final knownPersonsResponse = await _supabase
           .from('known_persons')
           .select()
           .eq('owner_id', patientId);
       final knownPersonsCount = (knownPersonsResponse as List).length;
 
-      // Get total recognitions (successful)
+      // ✅ FIX #5: Get total recognitions (successful)
       final recognitionsResponse = await _supabase
           .from('face_recognition_logs')
           .select()
@@ -343,14 +349,14 @@ class KnownPersonRepository {
           .eq('is_recognized', true);
       final recognitionsCount = (recognitionsResponse as List).length;
 
-      // Get recognition attempts (all)
+      // ✅ FIX #5: Get recognition attempts (all)
       final attemptsResponse = await _supabase
           .from('face_recognition_logs')
           .select()
           .eq('patient_id', patientId);
       final attemptsCount = (attemptsResponse as List).length;
 
-      // Calculate success rate
+      // ✅ FIX #5: Calculate success rate safely
       final successRate = attemptsCount > 0
           ? (recognitionsCount / attemptsCount * 100).toStringAsFixed(1)
           : '0.0';

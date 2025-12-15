@@ -323,16 +323,22 @@ class FaceRecognitionNotifier extends StateNotifier<AsyncValue<KnownPerson?>> {
       double? similarityScore;
       if (searchResult is Success<KnownPerson?>) {
         matchedPerson = searchResult.data;
-        // Similarity score will be returned from DB function in real implementation
-        // For now, use high confidence score for matched persons
-        similarityScore = matchedPerson != null ? 0.92 : 0.0;
+        // ✅ FIX #4: Use REAL similarity score from database
+        similarityScore = matchedPerson?.similarityScore ?? 0.0;
+
+        // ✅ FIX #4: Log confidence for debugging
+        if (matchedPerson != null && kDebugMode) {
+          final confidence = (similarityScore * 100).toStringAsFixed(1);
+          debugPrint('   ✅ Match found with $confidence% confidence');
+        }
       }
 
-      // Step 4: Save recognition log
+      // Step 4: Save recognition log with REAL similarity score
       await _repository.saveRecognitionLog(
         patientId: patientId,
         recognizedPersonId: matchedPerson?.id,
-        similarityScore: similarityScore,
+        similarityScore:
+            similarityScore, // ✅ FIX #4: Now contains real value from DB
         isRecognized: matchedPerson != null,
         photoUrl: '', // Optional: upload photo jika diperlukan
       );

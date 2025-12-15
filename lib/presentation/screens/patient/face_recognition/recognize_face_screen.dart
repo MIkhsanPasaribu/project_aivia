@@ -41,6 +41,10 @@ class _RecognizeFaceScreenState extends ConsumerState<RecognizeFaceScreen>
   bool _isProcessing = false;
   String? _errorMessage;
 
+  // ✅ FIX #6: Debouncing fields untuk capture button
+  DateTime? _lastCaptureTime;
+  static const Duration _captureDebounce = Duration(seconds: 2);
+
   @override
   void initState() {
     super.initState();
@@ -57,7 +61,7 @@ class _RecognizeFaceScreenState extends ConsumerState<RecognizeFaceScreen>
   }
 
   @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
+  void didChangeAppLifecycleState(AppLifecycleState state) async {
     final controller = _cameraController;
     if (controller == null || !controller.value.isInitialized) {
       return;
@@ -66,7 +70,17 @@ class _RecognizeFaceScreenState extends ConsumerState<RecognizeFaceScreen>
     if (state == AppLifecycleState.inactive) {
       _stopImageStream();
     } else if (state == AppLifecycleState.resumed) {
-      _startImageStream();
+      // ✅ FIX #7: Add delay to ensure camera is ready after resume
+      await Future.delayed(const Duration(milliseconds: 300));
+
+      // ✅ FIX #7: Check again after delay (widget might be disposed)
+      if (mounted &&
+          _cameraController != null &&
+          _cameraController!.value.isInitialized) {
+        _startImageStream();
+      } else {
+        debugPrint('⚠️ Camera not ready after resume, skipping stream start');
+      }
     }
   }
 
@@ -190,12 +204,28 @@ class _RecognizeFaceScreenState extends ConsumerState<RecognizeFaceScreen>
   // ====================================================
 
   Future<void> _onCapture() async {
+    // ✅ FIX #6: Debounce check - prevent spam capture
+    if (_lastCaptureTime != null) {
+      final elapsed = DateTime.now().difference(_lastCaptureTime!);
+      if (elapsed < _captureDebounce) {
+        final remaining = _captureDebounce.inSeconds - elapsed.inSeconds;
+        _showSnackBar(
+          'Tunggu $remaining detik lagi sebelum foto berikutnya',
+          isError: true,
+        );
+        return;
+      }
+    }
+
     if (_detectedFaces.isEmpty) {
       _showSnackBar(AppStrings.noFaceDetected, isError: true);
       return;
     }
 
     if (_isProcessing) return;
+
+    // ✅ FIX #6: Set last capture time
+    _lastCaptureTime = DateTime.now();
 
     setState(() => _isProcessing = true);
 

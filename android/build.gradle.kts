@@ -32,6 +32,15 @@ subprojects {
                 jvmTarget = "17"
             }
         }
+        
+        // 🆕 Suppress Java compiler warnings (unchecked operations from third-party plugins)
+        tasks.withType<JavaCompile>().configureEach {
+            options.compilerArgs.addAll(listOf(
+                "-Xlint:none",          // Disable all lints
+                "-Xlint:-unchecked",    // Specifically disable unchecked warnings
+                "-Xlint:-deprecation"   // Disable deprecation warnings
+            ))
+        }
     }
 }
 subprojects {
