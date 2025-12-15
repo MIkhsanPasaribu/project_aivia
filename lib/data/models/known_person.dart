@@ -12,7 +12,6 @@ class KnownPerson {
   final DateTime createdAt;
   final DateTime updatedAt;
 
-  // ✅ FIX #4: Similarity score dari recognition (transient field, tidak disimpan di DB)
   final double? similarityScore; // Range [0, 1], null jika belum di-recognize
 
   const KnownPerson({
@@ -66,7 +65,7 @@ class KnownPerson {
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
       similarityScore:
-          json['similarity'] as double?, // ✅ FIX #4: Parse from DB function
+          json['similarity'] as double?,
     );
   }
 
@@ -103,7 +102,7 @@ class KnownPerson {
     int? recognitionCount,
     DateTime? createdAt,
     DateTime? updatedAt,
-    double? similarityScore, // ✅ FIX #4
+    double? similarityScore,
   }) {
     return KnownPerson(
       id: id ?? this.id,
@@ -117,7 +116,7 @@ class KnownPerson {
       recognitionCount: recognitionCount ?? this.recognitionCount,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
-      similarityScore: similarityScore ?? this.similarityScore, // ✅ FIX #4
+      similarityScore: similarityScore ?? this.similarityScore,
     );
   }
 
